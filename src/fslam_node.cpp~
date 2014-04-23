@@ -188,7 +188,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 			TransformWithCovarianceStamped tlm;
 			tlm.header = lm->markers[0].header;
 			tlm.child_frame_id = "lm1";
-			tlm.header.frame_id = "robot";
+			tlm.header.frame_id = "base_link";
 			tlm.transform.transform.translation.x =
 					lm->markers[0].pose.pose.position.x;
 			tlm.transform.transform.translation.y =
