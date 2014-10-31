@@ -5,6 +5,12 @@
  *      Author: biorob
  */
 
+#include "ros/ros.h"
+#include <ros/node_handle.h>
+
+#include <message_filters/subscriber.h>
+#include <message_filters/cache.h>
+
 #include "fslam_node.h"
 
 #include <model/systemmodel.h>
@@ -24,8 +30,9 @@ using namespace MatrixWrapper;
 using namespace BFL;
 using namespace std;
 using namespace tf;
+using namespace ros;
 
-FSLAMNode::FSLAMNode() {
+FSLAMNode::FSLAMNode(int argc, char ** argv) {
 	// create gaussian
 	ColumnVector sys_noise_Mu(3);
 	sys_noise_Mu(1) = MU_SYSTEM_NOISE_X;
@@ -102,9 +109,37 @@ FSLAMNode::FSLAMNode() {
 	prior_discr->ListOfSamplesSet(prior_samples);
 
 	filter = new FSLAMFilter(prior_discr, 0, NUM_SAMPLES / 4.0);
+
+	init(argc, argv, "robot_pose_fslam");
+
+	NodeHandle nh;
+
+	message_filters::Subscriber<TransformWithCovarianceStamped> sub(nh, "/landmark", 1);
+	message_filters::Cache<TransformWithCovarianceStamped> cache(sub, 1);
+
+	ros::Rate r(1);
+	ros::Time lastUpdate = ros::Time::now();
+	while(ros::ok()){
+		ros::Time updateTime = ros::Time::now();
+		vector<TransformWithCovarianceStampedConstPtr> lms = cache.getInterval(lastUpdate,updateTime);
+		if (lms.size()>0){
+			//TransformWithCovarianceStampedConstPtr lm = lms.at(lms.size() - 1);
+			ROS_INFO("Received lm");
+		} else {
+			ROS_INFO("No lm received");
+		}
+		lastUpdate = updateTime;
+		ros::spinOnce();
+		r.sleep();
+	}
+
 }
 
 FSLAMNode::~FSLAMNode() {
 	// TODO Auto-generated destructor stub
+}
+
+int main(int argc, char** argv) {
+	FSLAMNode filter(argc, argv);
 }
 

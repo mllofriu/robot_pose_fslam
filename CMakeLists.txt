@@ -116,22 +116,31 @@ link_directories(${BFL_LIBRARY_DIRS})
 # )
 
 ## Declare a cpp executable
-add_executable(fslam_test 
-#    src/test_nonlinear_particle.cpp
+add_executable(robot_pose_fslam_test
+    src/test_nonlinear_particle.cpp
+)
+
+add_executable(robot_pose_fslam
     src/nonlinearSystemPdf.cpp 
     src/nonlinearMeasurementPdf.cpp 
     src/fslamfilter.cpp
     src/fslam_node.cpp
 )
 
-set_target_properties(fslam_test PROPERTIES COMPILE_FLAGS -fpermissive)
+set_target_properties(robot_pose_fslam PROPERTIES COMPILE_FLAGS -fpermissive)
+set_target_properties(robot_pose_fslam_test PROPERTIES COMPILE_FLAGS -fpermissive)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(robot_pose_fslam_node robot_pose_fslam_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(fslam_test
+target_link_libraries(robot_pose_fslam_test
+  ${catkin_LIBRARIES}
+  ${BFL_LIBRARIES}
+)
+
+target_link_libraries(robot_pose_fslam
   ${catkin_LIBRARIES}
   ${BFL_LIBRARIES}
 )

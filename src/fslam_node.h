@@ -30,7 +30,7 @@
 
 class FSLAMNode {
 public:
-	FSLAMNode();
+	FSLAMNode(int argc, char ** argv);
 	virtual ~FSLAMNode();
 
 private:
