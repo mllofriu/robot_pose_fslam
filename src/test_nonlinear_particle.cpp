@@ -44,123 +44,8 @@ using namespace BFL;
 using namespace std;
 using namespace tf;
 
-/* The purpose of this program is to construct a kalman filter for the problem
- of localisation of a mobile robot equipped with an ultrasonic sensor.
- In this case the orientation is known, which simplifies the model considerably:
- The system model will become linear.
- The ultrasonic measures the distance to the wall (it can be switched off:
- see mobile_robot_wall_cts.h)
-
- The necessary SYSTEM MODEL is:
-
- x_k      = x_{k-1} + v_{k-1} * cos(theta) * delta_t
- y_k      = y_{k-1} + v_{k-1} * sin(theta) * delta_t
-
- The used MEASUREMENT MODEL:
- measuring the (perpendicular) distance z to the wall y = ax + b
-
- set WALL_CT = 1/sqrt(pow(a,2) + 1)
- z = WALL_CT * a * x - WALL_CT * y + WALL_CT * b + GAUSSIAN_NOISE
- or Z = H * X_k + J * U_k
-
- where
-
- H = [ WALL_CT * a       - WALL_CT      0 ]
- and GAUSSIAN_NOISE = N((WALL_CT * b), SIGMA_MEAS_NOISE)
-
- */
-
-// System Noise
-#define MU_SYSTEM_NOISE_X 0.0
-#define MU_SYSTEM_NOISE_Y 0.0
-#define MU_SYSTEM_NOISE_THETA 0.0
-#define SIGMA_SYSTEM_NOISE_X pow(0.01,2)
-#define SIGMA_SYSTEM_NOISE_Y pow(0.01,2)
-#define SIGMA_SYSTEM_NOISE_THETA pow(2*M_PI/180,2)
-
-#define MU_MEAS_NOISE_X 0.0
-#define MU_MEAS_NOISE_Y 0.0
-#define MU_MEAS_NOISE_Z 0.0
-#define SIGMA_MEAS_NOISE_X .1
-#define SIGMA_MEAS_NOISE_Y .1
-#define SIGMA_MEAS_NOISE_Z .1
-
-#define NUM_SAMPLES 1 // Default Number of Samples
-#define RESAMPLE_PERIOD 0 // Default Resample Period
-#define RESAMPLE_THRESHOLD (NUM_SAMPLES/4.0) // Threshold for Dynamic Resampling
 int main(int argc, char** argv) {
-	// create gaussian
-	ColumnVector sys_noise_Mu(3);
-	sys_noise_Mu(1) = MU_SYSTEM_NOISE_X;
-	sys_noise_Mu(2) = MU_SYSTEM_NOISE_Y;
-	sys_noise_Mu(3) = MU_SYSTEM_NOISE_THETA;
 
-	SymmetricMatrix sys_noise_Cov(3);
-	sys_noise_Cov = 0.0;
-	sys_noise_Cov(1, 1) = SIGMA_SYSTEM_NOISE_X;
-	sys_noise_Cov(1, 2) = 0.0;
-	sys_noise_Cov(1, 3) = 0.0;
-	sys_noise_Cov(2, 1) = 0.0;
-	sys_noise_Cov(2, 2) = SIGMA_SYSTEM_NOISE_Y;
-	sys_noise_Cov(2, 3) = 0.0;
-	sys_noise_Cov(3, 1) = 0.0;
-	sys_noise_Cov(3, 2) = 0.0;
-	sys_noise_Cov(3, 3) = SIGMA_SYSTEM_NOISE_THETA;
-
-	Gaussian system_Uncertainty(sys_noise_Mu, sys_noise_Cov);
-
-	// create the nonlinear system model
-	NonlinearSystemPdf sys_pdf(system_Uncertainty);
-	SystemModel<vector<TransformWithCovarianceStamped> > sys_model(&sys_pdf);
-
-	/*********************************
-	 * NonLinear Measurement model   *
-	 ********************************/
-
-	// create gaussian
-	ColumnVector meas_noise_Mu(3);
-	meas_noise_Mu(1) = MU_MEAS_NOISE_X;
-	meas_noise_Mu(2) = MU_MEAS_NOISE_Y;
-	meas_noise_Mu(3) = MU_MEAS_NOISE_Z;
-
-	SymmetricMatrix meas_noise_Cov(3);
-	meas_noise_Cov = 0.0;
-	meas_noise_Cov(1, 1) = SIGMA_MEAS_NOISE_X;
-	meas_noise_Cov(1, 2) = 0.0;
-	meas_noise_Cov(1, 3) = 0.0;
-	meas_noise_Cov(2, 1) = 0.0;
-	meas_noise_Cov(2, 2) = SIGMA_MEAS_NOISE_Y;
-	meas_noise_Cov(2, 3) = 0.0;
-	meas_noise_Cov(3, 1) = 0.0;
-	meas_noise_Cov(3, 2) = 0.0;
-	meas_noise_Cov(3, 3) = SIGMA_MEAS_NOISE_Z;
-
-	Gaussian meas_Uncertainty(meas_noise_Mu, meas_noise_Cov);
-	NonlinearMeasurementPdf meas_pdf(meas_Uncertainty);
-	MeasurementModel<TransformWithCovarianceStamped,
-			vector<TransformWithCovarianceStamped> > meas_model(&meas_pdf);
-
-	/****************************
-	 * Linear prior DENSITY     *
-	 ***************************/
-	// Discrete prior for Particle filter (using the continuous Gaussian prior)
-	vector<Sample<vector<TransformWithCovarianceStamped> > > prior_samples(
-			NUM_SAMPLES);
-	for (vector<Sample<vector<TransformWithCovarianceStamped> > >::iterator iter =
-			prior_samples.begin(); iter != prior_samples.end(); iter++) {
-		TransformWithCovarianceStamped sample;
-		sample.child_frame_id = "robot";
-		sample.transform.transform.translation.x = 1;
-		sample.transform.transform.translation.y = 0;
-		sample.transform.transform.translation.z = 0;
-		sample.transform.transform.rotation.x = 0;
-		sample.transform.transform.rotation.y = 0;
-		sample.transform.transform.rotation.z = 0;
-		sample.transform.transform.rotation.w = 1;
-		iter->ValueGet().push_back(sample);
-	}
-	MCPdf<vector<TransformWithCovarianceStamped> > prior_discr(NUM_SAMPLES, 1);
-	prior_discr.ListOfSamplesSet(prior_samples);
 
 	/******************************
 	 * Construction of the Filter *
@@ -174,8 +59,6 @@ int main(int argc, char** argv) {
 	 **************************/
 	// Model of mobile robot in world with one wall
 	// The model is used to simultate the distance measurements.
-
-
 	/*******************
 	 * ESTIMATION LOOP *
 	 *******************/
@@ -193,17 +76,25 @@ int main(int argc, char** argv) {
 		odomInput.transform.transform.rotation.y = 0;
 		odomInput.transform.transform.rotation.z = 0;
 		odomInput.transform.transform.rotation.w = 1;
-		odomInput.child_frame_id =  "robot";
+		odomInput.child_frame_id = "robot";
+		odomInput.header.frame_id = "world";
 		input.push_back(odomInput);
 		// DO ONE MEASUREMENT
 		//Transform measurement = mobile_robot.Measure();
 		TransformWithCovarianceStamped measurement;
 		measurement.child_frame_id = "lm1";
 		measurement.header.frame_id = "robot";
-		measurement.transform.transform.translation.x = 10;
+		measurement.transform.transform.translation.x = 1;
+		measurement.transform.transform.translation.y = 0;
+		measurement.transform.transform.translation.z = 0;
+		measurement.transform.transform.rotation.x = 0;
+		measurement.transform.transform.rotation.y = 0;
+		measurement.transform.transform.rotation.z = 0;
+		measurement.transform.transform.rotation.w = 1;
 		// UPDATE FILTER
 		filter.Update(&sys_model, input, &meas_model, measurement);
 
+		mapping(filter.PostGet(), measurement);
 	} // estimation loop
 
 //	Pdf<vector<TransformWithCovarianceStamped> > * posterior = filter.PostGet();

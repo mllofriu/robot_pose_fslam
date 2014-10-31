@@ -39,7 +39,6 @@ Probability NonlinearMeasurementPdf::ProbabilityGet(
 		const TransformWithCovarianceStamped& m) const {
 	// Find the transoform that defines the frame in which the measurement is defined
 	vector<TransformWithCovarianceStamped> state = this->ConditionalArgumentGet(0);
-	ROS_INFO("State size %d", state.size());
 	vector<TransformWithCovarianceStamped>::iterator stateIter;
 	for (stateIter = state.begin();
 			stateIter != state.end()
@@ -59,7 +58,8 @@ Probability NonlinearMeasurementPdf::ProbabilityGet(
 	tf::Transform measurementT;
 	transformMsgToTF(measurement.transform.transform, measurementT);
 	measurementT *= stateT;
-	transformTFToMsg(measurementT,measurement.transform.transform);
+	ROS_INFO("Measurement x in world frame: %f", measurementT.getOrigin().getX());
+	//transformTFToMsg(measurementT,measurement.transform.transform);
 
 	vector<TransformWithCovarianceStamped>::iterator lmIter;
 	for (lmIter = state.begin();
@@ -68,28 +68,26 @@ Probability NonlinearMeasurementPdf::ProbabilityGet(
 								!= 0; lmIter++)
 			;
 
-	// If landmark is not in the map add it, but skip probability assignment
-	if (lmIter == state.end()){
-		// TODO: covariance change?
-		ROS_INFO("Adding lm to the map ");
-		state.push_back(measurement);
-		this->ConditionalArgumentSet(0,state);
+	// If landmark is not in the map just return
+	if (lmIter == state.end())
 		return 1;
-	}
+
 
 	// calculate measurement probability
 	// using the distance between transforms
 	tf::Transform oldMeasT;
 	transformMsgToTF(lmIter->transform.transform, oldMeasT);
-	measurementT.inverse();
-	oldMeasT *= measurementT;
+	ROS_INFO("Landmark x in world frame: %f", oldMeasT.getOrigin().getX());
+	measurementT = oldMeasT.inverse() * measurementT;
 	// Calculate the difference between the old transform and new transform using inverse
 	// and measNois prior
 	// TODO: use both the lm covariance and measure covariance to find prob.
 	ColumnVector diff(3);
-	diff(1) = oldMeasT.getOrigin().getX();
-	diff(2) = oldMeasT.getOrigin().getY();
-	diff(3) = oldMeasT.getOrigin().getZ();
+	ROS_INFO("Diff x: %f", measurementT.getOrigin().getX());
+	diff(1) = measurementT.getOrigin().getX();
+	diff(2) = measurementT.getOrigin().getY();
+	diff(3) = measurementT.getOrigin().getZ();
+	ROS_INFO("Measurement probability %f",_measNoise.ProbabilityGet(diff).getValue() );
 	return _measNoise.ProbabilityGet(diff);
 }
 

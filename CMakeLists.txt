@@ -117,9 +117,11 @@ link_directories(${BFL_LIBRARY_DIRS})
 
 ## Declare a cpp executable
 add_executable(fslam_test 
-    src/test_nonlinear_particle.cpp
+#    src/test_nonlinear_particle.cpp
     src/nonlinearSystemPdf.cpp 
     src/nonlinearMeasurementPdf.cpp 
+    src/fslamfilter.cpp
+    src/fslam_node.cpp
 )
 
 set_target_properties(fslam_test PROPERTIES COMPILE_FLAGS -fpermissive)
