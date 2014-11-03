@@ -46,22 +46,22 @@ int main(int argc, char** argv) {
 //	 *******************/
 //	cout << "MAIN: Starting estimation" << endl;
 //	unsigned int time_step;
-	ros::Rate r(.5);
+	ros::Rate r(2);
 	for (int i = 0; i < 20; i++) {
 		// DO ONE STEP WITH MOBILE ROBOT
 		//mobile_robot.Move(input);
-//		vector<TransformWithCovarianceStamped> input;
-//		TransformWithCovarianceStamped odomInput;
-//		odomInput.transform.transform.translation.x = 0.05;
-//		odomInput.transform.transform.translation.y = 0;
-//		odomInput.transform.transform.translation.z = 0;
-//		odomInput.transform.transform.rotation.x = 0;
-//		odomInput.transform.transform.rotation.y = 0;
-//		odomInput.transform.transform.rotation.z = 0;
-//		odomInput.transform.transform.rotation.w = 1;
-//		odomInput.child_frame_id = "robot";
-//		odomInput.header.frame_id = "world";
-//		input.push_back(odomInput);
+		vector<TransformWithCovarianceStamped> input;
+		TransformWithCovarianceStamped odomInput;
+		odomInput.transform.transform.translation.x = 0.05;
+		odomInput.transform.transform.translation.y = 0;
+		odomInput.transform.transform.translation.z = 0;
+		odomInput.transform.transform.rotation.x = 0;
+		odomInput.transform.transform.rotation.y = 0;
+		odomInput.transform.transform.rotation.z = 0;
+		odomInput.transform.transform.rotation.w = 1;
+		odomInput.child_frame_id = "robot";
+		odomInput.header.frame_id = "map";
+		input.push_back(odomInput);
 		// DO ONE MEASUREMENT
 		//Transform measurement = mobile_robot.Measure();
 		TransformWithCovarianceStamped measurement;
@@ -77,6 +77,7 @@ int main(int argc, char** argv) {
 		measurement.transform.transform.rotation.w = 1;
 		chatter_pub.publish(measurement);
 		ROS_INFO("message published");
+
 		r.sleep();
 	} // estimation loop
 

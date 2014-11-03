@@ -18,8 +18,7 @@ robot_pose_fslam::TransformWithCovarianceStamped>
 {
 public:
 	FSLAMFilter(BFL::MCPdf<std::vector<robot_pose_fslam::TransformWithCovarianceStamped> > * prior, int resample_period, double resample_thrs);
-	void mapping(BFL::MCPdf<std::vector<robot_pose_fslam::TransformWithCovarianceStamped> > * mcpdf,
-			robot_pose_fslam::TransformWithCovarianceStamped & measurement);
+	void mapping(const robot_pose_fslam::TransformWithCovarianceStamped & measurement);
 };
 
 

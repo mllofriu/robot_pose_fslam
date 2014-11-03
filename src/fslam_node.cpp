@@ -23,6 +23,8 @@
 #include "mobile_robot_wall_cts.h"
 
 #include <tf/transform_datatypes.h>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
 #include <robot_pose_fslam/TransformWithCovarianceStamped.h>
 
 using namespace robot_pose_fslam;
@@ -114,22 +116,55 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 
 	NodeHandle nh;
 
-	message_filters::Subscriber<TransformWithCovarianceStamped> sub(nh, "/landmark", 1);
+	message_filters::Subscriber<TransformWithCovarianceStamped> sub(nh,
+			"/landmark", 1);
 	message_filters::Cache<TransformWithCovarianceStamped> cache(sub, 1);
+
+	TransformListener tfl;
 
 	ros::Rate r(1);
 	ros::Time lastUpdate = ros::Time::now();
-	while(ros::ok()){
-		ros::Time updateTime = ros::Time::now();
-		vector<TransformWithCovarianceStampedConstPtr> lms = cache.getInterval(lastUpdate,updateTime);
-		if (lms.size()>0){
-			//TransformWithCovarianceStampedConstPtr lm = lms.at(lms.size() - 1);
-			ROS_INFO("Received lm");
+	while (ros::ok()) {
+		// Spin to let the caches fill themselves
+		ros::spinOnce();
+		// This update time
+		ros::Time now = ros::Time::now();
+
+		// First update with odometry
+		// Find odometry transform since last update
+		StampedTransform t;
+		try {
+			tfl.waitForTransform("/odometry", now, "/odometry", lastUpdate,
+					"/map", Duration(.5));
+			tfl.lookupTransform("/odometry", now, "/odometry", lastUpdate,
+					"/map", t);
+		} catch (TransformException tfe) {
+			ROS_ERROR("%s", tfe.what());
+		}
+		// Build odometry transform
+		TransformWithCovarianceStamped odomT;
+		odomT.child_frame_id = "robot";
+		odomT.header.stamp = t.stamp_;
+		odomT.header.frame_id = "map";
+		transformTFToMsg(t, odomT.transform.transform);
+		vector<TransformWithCovarianceStamped> input;
+		input.push_back(odomT);
+
+		filter->Update(&sys_model, input);
+
+		// Get landmark
+
+		TransformWithCovarianceStampedConstPtr lm = cache.getElemBeforeTime(
+				now);
+		if (lm != NULL && lm->header.stamp > lastUpdate) {
+			ROS_INFO("Received lm at %d", lm->header.stamp.sec);
+			// Build measurement transform
+			filter->Update(&meas_model, *lm);
+			filter->mapping(*lm);
 		} else {
 			ROS_INFO("No lm received");
 		}
-		lastUpdate = updateTime;
-		ros::spinOnce();
+				lastUpdate = now;
 		r.sleep();
 	}
 

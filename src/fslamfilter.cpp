@@ -14,9 +14,10 @@ FSLAMFilter::FSLAMFilter(MCPdf<vector<TransformWithCovarianceStamped> > * prior,
 				resample_thrs) {
 }
 
-void FSLAMFilter::mapping(
-		MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf,
-		TransformWithCovarianceStamped & measurement) {
+void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
+
+	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
+	TransformWithCovarianceStamped measurement(m);
 
 	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
 		ROS_INFO("%s", measurement.header.frame_id.c_str());
