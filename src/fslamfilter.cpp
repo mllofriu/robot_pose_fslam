@@ -87,7 +87,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br) {
 
 		tf::Transform t;
 		transformMsgToTF(stateIter->transform.transform, t);
-		ROS_INFO("Particle x %f", t.getOrigin().getX());
+//		ROS_INFO("Particle x %f", t.getOrigin().getX());
 		char child_frame[10];
 		sprintf(&child_frame[0], "part%d", i);
 		tf::StampedTransform st(t,

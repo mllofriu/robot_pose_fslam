@@ -40,6 +40,20 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 	// TODO: read from parameters
 	publish_tf_ = true;
 
+	init(argc, argv, "robot_pose_fslam");
+
+	NodeHandle nh;
+	tf::TransformBroadcaster br;
+
+	//	message_filters::Subscriber<TransformWithCovarianceStamped> sub(nh,
+	//			"/landmark", 1);
+	//	message_filters::Cache<TransformWithCovarianceStamped> cache(sub, 1);
+	message_filters::Subscriber<ar_pose::ARMarkers> sub(nh,
+			"/ar_multi_nodelet/ar_pose_marker", 1);
+	message_filters::Cache<ar_pose::ARMarkers> cache(sub, 1);
+
+	TransformListener tfl;
+
 	// create gaussian
 	ColumnVector sys_noise_Mu(3);
 	sys_noise_Mu(1) = MU_SYSTEM_NOISE_X;
@@ -97,18 +111,31 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 	// Discrete prior for Particle filter (using the continuous Gaussian prior)
 	vector<Sample<vector<TransformWithCovarianceStamped> > > prior_samples(
 			NUM_SAMPLES);
+	StampedTransform initial_t;
+	bool gotTransform = false;
+	ros::Time tTime = ros::Time::now();
+	while (!gotTransform){
+		try {
+			tfl.waitForTransform("odom", "base_link", tTime,
+					Duration(20));
+			tfl.lookupTransform("odom", "base_link", tTime,
+					initial_t);
+			gotTransform = true;
+		} catch (TransformException tfe) {
+			ROS_ERROR("%s", tfe.what());
+		}
+		if (!gotTransform)
+			Duration(1).sleep();
+	}
+
 	for (vector<Sample<vector<TransformWithCovarianceStamped> > >::iterator iter =
 			prior_samples.begin(); iter != prior_samples.end(); iter++) {
 		TransformWithCovarianceStamped sample;
 		sample.child_frame_id = "base_link";
 		sample.header.frame_id = "odom";
-		sample.transform.transform.translation.x = 0;
-		sample.transform.transform.translation.y = 0;
-		sample.transform.transform.translation.z = 0;
-		sample.transform.transform.rotation.x = 0;
-		sample.transform.transform.rotation.y = 0;
-		sample.transform.transform.rotation.z = 0;
-		sample.transform.transform.rotation.w = 1;
+		sample.header.stamp = tTime;
+		// Copy initial odometry to samples
+		transformTFToMsg(initial_t, sample.transform.transform);
 		iter->ValueGet().push_back(sample);
 	}
 	MCPdf<vector<TransformWithCovarianceStamped> > * prior_discr = new MCPdf<
@@ -116,20 +143,6 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 	prior_discr->ListOfSamplesSet(prior_samples);
 
 	filter = new FSLAMFilter(prior_discr, 0, NUM_SAMPLES / 4.0);
-
-	init(argc, argv, "robot_pose_fslam");
-
-	NodeHandle nh;
-	tf::TransformBroadcaster br;
-
-//	message_filters::Subscriber<TransformWithCovarianceStamped> sub(nh,
-//			"/landmark", 1);
-//	message_filters::Cache<TransformWithCovarianceStamped> cache(sub, 1);
-	message_filters::Subscriber<ar_pose::ARMarkers> sub(nh,
-			"/ar_multi_nodelet/ar_pose_marker", 1);
-	message_filters::Cache<ar_pose::ARMarkers> cache(sub, 1);
-
-	TransformListener tfl;
 
 	ros::Rate r(FILTER_RATE);
 	ros::Time lastUpdate = ros::Time::now();
@@ -155,7 +168,10 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 		odomT.child_frame_id = "base_link";
 		odomT.header.stamp = t.stamp_;
 		odomT.header.frame_id = "odom";
+//		t.setOrigin(tf::Vector3(t.getOrigin().getX(),t.getOrigin().getY(),0));
+//		t.setRotation(tf::Quaternion().getIdentity());
 		transformTFToMsg(t, odomT.transform.transform);
+//		ROS_INFO("Z translation: %f", odomT.transform.transform.translation.z);
 		vector<TransformWithCovarianceStamped> input;
 		input.push_back(odomT);
 
@@ -163,20 +179,24 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 
 		// Get landmark
 
-		ar_pose::ARMarkersConstPtr lm = cache.getElemBeforeTime(
-				now);
+		ar_pose::ARMarkersConstPtr lm = cache.getElemBeforeTime(now);
 
-		if (lm != NULL && lm->markers.size() > 0 && lm->markers[0].header.stamp > lastUpdate  ) {
+		if (lm != NULL && lm->markers.size() > 0
+				&& lm->markers[0].header.stamp > lastUpdate) {
 			ROS_INFO("Received lm at %d", lm->markers[0].header.stamp.sec);
 			// Build measurement transform
 			TransformWithCovarianceStamped tlm;
 			tlm.header = lm->markers[0].header;
 			tlm.child_frame_id = "lm1";
 			tlm.header.frame_id = "base_link";
-			tlm.transform.transform.translation.x = lm->markers[0].pose.pose.position.x;
-			tlm.transform.transform.translation.y = lm->markers[0].pose.pose.position.y;
-			tlm.transform.transform.translation.z = lm->markers[0].pose.pose.position.z;
-			tlm.transform.transform.rotation = lm->markers[0].pose.pose.orientation;
+			tlm.transform.transform.translation.x =
+					lm->markers[0].pose.pose.position.x;
+			tlm.transform.transform.translation.y =
+					lm->markers[0].pose.pose.position.y;
+			tlm.transform.transform.translation.z =
+					lm->markers[0].pose.pose.position.z;
+			tlm.transform.transform.rotation =
+					lm->markers[0].pose.pose.orientation;
 			filter->Update(&meas_model, tlm);
 			filter->mapping(tlm);
 		} else {
