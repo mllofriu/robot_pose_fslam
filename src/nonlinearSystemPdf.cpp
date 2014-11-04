@@ -67,10 +67,19 @@ bool NonlinearSystemPdf::SampleFrom(
 		transformMsgToTF(odomIter->transform.transform, change);
 		oldT.mult(oldT,change);
 
+		Sample<ColumnVector> noise;
+		_additiveNoise.SampleFrom(noise, 0, NULL);
+		tf::Vector3 transNoise = tf::Vector3(noise.ValueGet()(1),noise.ValueGet()(2), 0);
+		oldT.setOrigin(oldT.getOrigin() + transNoise);
+		oldT.setRotation(oldT.getRotation() * tf::Quaternion(tf::Vector3(0,0,1), noise.ValueGet()(3)));
+
 		ROS_INFO("New x %f", oldT.getOrigin().getX());
 
 		transformTFToMsg(oldT,stateIter->transform.transform);
+		stateIter->header.stamp = odomIter->header.stamp;
 		// TODO: add noise
+
+
 	}
 
 	one_sample.ValueSet(state);

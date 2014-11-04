@@ -37,6 +37,9 @@ using namespace tf;
 using namespace ros;
 
 FSLAMNode::FSLAMNode(int argc, char ** argv) {
+	// TODO: read from parameters
+	publish_tf_ = true;
+
 	// create gaussian
 	ColumnVector sys_noise_Mu(3);
 	sys_noise_Mu(1) = MU_SYSTEM_NOISE_X;
@@ -117,6 +120,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 	init(argc, argv, "robot_pose_fslam");
 
 	NodeHandle nh;
+	tf::TransformBroadcaster br;
 
 //	message_filters::Subscriber<TransformWithCovarianceStamped> sub(nh,
 //			"/landmark", 1);
@@ -127,7 +131,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 
 	TransformListener tfl;
 
-	ros::Rate r(1);
+	ros::Rate r(FILTER_RATE);
 	ros::Time lastUpdate = ros::Time::now();
 	while (ros::ok()) {
 		// Spin to let the caches fill themselves
@@ -159,28 +163,29 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 
 		// Get landmark
 
-//		ar_pose::ARMarkersConstPtr lm = cache.getElemBeforeTime(
-//				now);
-//		if (lm != NULL)
-//			ROS_INFO("Received lm, cheking conditions");
-//
-//		if (lm != NULL && lm->markers.size() > 0 && lm->markers[0].header.stamp > lastUpdate  ) {
-//			ROS_INFO("Received lm at %d", lm->header.stamp.sec);
-//			// Build measurement transform
-//			TransformWithCovarianceStamped tlm;
-//			tlm.header = lm->markers[0].header;
-//			tlm.child_frame_id = "/lm1";
-//			tlm.header.frame_id = "/base_link";
-//			tlm.transform.transform.translation.x = lm->markers[0].pose.pose.position.x;
-//			tlm.transform.transform.translation.y = lm->markers[0].pose.pose.position.y;
-//			tlm.transform.transform.translation.z = lm->markers[0].pose.pose.position.z;
-//			tlm.transform.transform.rotation = lm->markers[0].pose.pose.orientation;
-//			filter->Update(&meas_model, tlm);
-//			filter->mapping(tlm);
-//		} else {
-//			ROS_INFO("No lm received");
-//		}
-//
+		ar_pose::ARMarkersConstPtr lm = cache.getElemBeforeTime(
+				now);
+
+		if (lm != NULL && lm->markers.size() > 0 && lm->markers[0].header.stamp > lastUpdate  ) {
+			ROS_INFO("Received lm at %d", lm->markers[0].header.stamp.sec);
+			// Build measurement transform
+			TransformWithCovarianceStamped tlm;
+			tlm.header = lm->markers[0].header;
+			tlm.child_frame_id = "lm1";
+			tlm.header.frame_id = "base_link";
+			tlm.transform.transform.translation.x = lm->markers[0].pose.pose.position.x;
+			tlm.transform.transform.translation.y = lm->markers[0].pose.pose.position.y;
+			tlm.transform.transform.translation.z = lm->markers[0].pose.pose.position.z;
+			tlm.transform.transform.rotation = lm->markers[0].pose.pose.orientation;
+			filter->Update(&meas_model, tlm);
+			filter->mapping(tlm);
+		} else {
+			ROS_INFO("No lm received");
+		}
+
+		if (publish_tf_)
+			filter->publishTF(br);
+
 		lastUpdate = now;
 		r.sleep();
 	}

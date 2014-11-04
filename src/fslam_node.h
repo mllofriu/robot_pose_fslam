@@ -24,9 +24,11 @@
 #define SIGMA_MEAS_NOISE_Y .1
 #define SIGMA_MEAS_NOISE_Z .1
 
-#define NUM_SAMPLES 10 // Default Number of Samples
+#define NUM_SAMPLES 100 // Default Number of Samples
 #define RESAMPLE_PERIOD 0 // Default Resample Period
 #define RESAMPLE_THRESHOLD (NUM_SAMPLES/4.0) // Threshold for Dynamic Resampling
+
+#define FILTER_RATE 10
 
 class FSLAMNode {
 public:
@@ -35,6 +37,7 @@ public:
 
 private:
 	FSLAMFilter * filter;
+	bool publish_tf_;
 };
 
 #endif /* FSLAMNODE_H_ */
