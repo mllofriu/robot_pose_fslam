@@ -67,6 +67,8 @@ bool NonlinearSystemPdf::SampleFrom(
 		transformMsgToTF(odomIter->transform.transform, change);
 		oldT.mult(oldT,change);
 
+		ROS_INFO("New x %f", oldT.getOrigin().getX());
+
 		transformTFToMsg(oldT,stateIter->transform.transform);
 		// TODO: add noise
 	}

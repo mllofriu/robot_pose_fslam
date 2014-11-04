@@ -22,6 +22,8 @@
 // Include file with properties
 #include "mobile_robot_wall_cts.h"
 
+#include <ar_pose/ARMarkers.h>
+
 #include <tf/transform_datatypes.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -95,8 +97,8 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 	for (vector<Sample<vector<TransformWithCovarianceStamped> > >::iterator iter =
 			prior_samples.begin(); iter != prior_samples.end(); iter++) {
 		TransformWithCovarianceStamped sample;
-		sample.child_frame_id = "robot";
-		sample.header.frame_id = "world";
+		sample.child_frame_id = "base_link";
+		sample.header.frame_id = "odom";
 		sample.transform.transform.translation.x = 0;
 		sample.transform.transform.translation.y = 0;
 		sample.transform.transform.translation.z = 0;
@@ -116,9 +118,12 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 
 	NodeHandle nh;
 
-	message_filters::Subscriber<TransformWithCovarianceStamped> sub(nh,
-			"/landmark", 1);
-	message_filters::Cache<TransformWithCovarianceStamped> cache(sub, 1);
+//	message_filters::Subscriber<TransformWithCovarianceStamped> sub(nh,
+//			"/landmark", 1);
+//	message_filters::Cache<TransformWithCovarianceStamped> cache(sub, 1);
+	message_filters::Subscriber<ar_pose::ARMarkers> sub(nh,
+			"/ar_multi_nodelet/ar_pose_marker", 1);
+	message_filters::Cache<ar_pose::ARMarkers> cache(sub, 1);
 
 	TransformListener tfl;
 
@@ -134,18 +139,18 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 		// Find odometry transform since last update
 		StampedTransform t;
 		try {
-			tfl.waitForTransform("/odometry", now, "/odometry", lastUpdate,
-					"/map", Duration(.5));
-			tfl.lookupTransform("/odometry", now, "/odometry", lastUpdate,
-					"/map", t);
+			tfl.waitForTransform("base_link", lastUpdate, "base_link", now,
+					"odom", Duration(.5));
+			tfl.lookupTransform("base_link", lastUpdate, "base_link", now,
+					"odom", t);
 		} catch (TransformException tfe) {
 			ROS_ERROR("%s", tfe.what());
 		}
 		// Build odometry transform
 		TransformWithCovarianceStamped odomT;
-		odomT.child_frame_id = "robot";
+		odomT.child_frame_id = "base_link";
 		odomT.header.stamp = t.stamp_;
-		odomT.header.frame_id = "map";
+		odomT.header.frame_id = "odom";
 		transformTFToMsg(t, odomT.transform.transform);
 		vector<TransformWithCovarianceStamped> input;
 		input.push_back(odomT);
@@ -154,17 +159,29 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 
 		// Get landmark
 
-		TransformWithCovarianceStampedConstPtr lm = cache.getElemBeforeTime(
-				now);
-		if (lm != NULL && lm->header.stamp > lastUpdate) {
-			ROS_INFO("Received lm at %d", lm->header.stamp.sec);
-			// Build measurement transform
-			filter->Update(&meas_model, *lm);
-			filter->mapping(*lm);
-		} else {
-			ROS_INFO("No lm received");
-		}
-				lastUpdate = now;
+//		ar_pose::ARMarkersConstPtr lm = cache.getElemBeforeTime(
+//				now);
+//		if (lm != NULL)
+//			ROS_INFO("Received lm, cheking conditions");
+//
+//		if (lm != NULL && lm->markers.size() > 0 && lm->markers[0].header.stamp > lastUpdate  ) {
+//			ROS_INFO("Received lm at %d", lm->header.stamp.sec);
+//			// Build measurement transform
+//			TransformWithCovarianceStamped tlm;
+//			tlm.header = lm->markers[0].header;
+//			tlm.child_frame_id = "/lm1";
+//			tlm.header.frame_id = "/base_link";
+//			tlm.transform.transform.translation.x = lm->markers[0].pose.pose.position.x;
+//			tlm.transform.transform.translation.y = lm->markers[0].pose.pose.position.y;
+//			tlm.transform.transform.translation.z = lm->markers[0].pose.pose.position.z;
+//			tlm.transform.transform.rotation = lm->markers[0].pose.pose.orientation;
+//			filter->Update(&meas_model, tlm);
+//			filter->mapping(tlm);
+//		} else {
+//			ROS_INFO("No lm received");
+//		}
+//
+		lastUpdate = now;
 		r.sleep();
 	}
 
