@@ -2,7 +2,6 @@
 
 #include <filter/bootstrapfilter.h>
 
-
 using namespace robot_pose_fslam;
 using namespace BFL;
 using namespace std;
@@ -54,7 +53,7 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 			transformMsgToTF(stateIter->transform.transform, stateT);
 			tf::Transform measurementT;
 			transformMsgToTF(measurement.transform.transform, measurementT);
-			measurementT *= stateT;
+			measurementT = stateT * measurementT;
 			transformTFToMsg(measurementT, measurement.transform.transform);
 			measurement.header.frame_id = stateIter->header.frame_id;
 			// TODO: Covariance
@@ -90,10 +89,25 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br) {
 //		ROS_INFO("Particle x %f", t.getOrigin().getX());
 		char child_frame[10];
 		sprintf(&child_frame[0], "part%d", i);
-		tf::StampedTransform st(t,
-				stateIter->header.stamp, stateIter->header.frame_id,
-				child_frame);
+		tf::StampedTransform st(t, stateIter->header.stamp,
+				stateIter->header.frame_id, child_frame);
 		br.sendTransform(st);
+
+		// Publish landmarks
+		int j = 0;
+		for (stateIter = state.begin(); stateIter != state.end(); stateIter++) {
+			if (stateIter->child_frame_id.compare("base_link") != 0) {
+				tf::Transform t;
+				transformMsgToTF(stateIter->transform.transform, t);
+				//		ROS_INFO("Particle x %f", t.getOrigin().getX());
+				char child_frame[15];
+				sprintf(&child_frame[0], "part%dlm%d", i, j);
+				tf::StampedTransform st(t, stateIter->header.stamp,
+						stateIter->header.frame_id, child_frame);
+				br.sendTransform(st);
+				j++;
+			}
+		}
 
 	}
 	ROS_INFO("TF particles published");

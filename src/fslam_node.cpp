@@ -128,6 +128,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 			Duration(1).sleep();
 	}
 
+//	initial_t.setRotation(initial_t.getRotation() * tf::Quaternion(tf::Vector3(0,1,0), -M_PI_2));
 	for (vector<Sample<vector<TransformWithCovarianceStamped> > >::iterator iter =
 			prior_samples.begin(); iter != prior_samples.end(); iter++) {
 		TransformWithCovarianceStamped sample;
@@ -187,7 +188,9 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 			// Build measurement transform
 			TransformWithCovarianceStamped tlm;
 			tlm.header = lm->markers[0].header;
-			tlm.child_frame_id = "lm1";
+			char child_frame[10];
+			sprintf(&child_frame[0], "lm%d", lm->markers[0].id);
+			tlm.child_frame_id = child_frame;
 			tlm.header.frame_id = "base_link";
 			tlm.transform.transform.translation.x =
 					lm->markers[0].pose.pose.position.x;
