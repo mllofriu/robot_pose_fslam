@@ -6,6 +6,7 @@ project(robot_pose_fslam)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   ar_pose
+  libartoolkit
   geometry_msgs
   std_msgs
   tf
@@ -16,10 +17,13 @@ find_package(catkin REQUIRED COMPONENTS
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(PkgConfig)
 
+find_package(GLU REQUIRED)
+
 pkg_check_modules(BFL REQUIRED bfl)
 
 message("BFL include dirs:" ${BFL_INCLUDE_DIRS})
 message("BFL library dirs:" ${BFL_LIBRARY_DIRS})
+
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -90,7 +94,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES robot_pose_fslam
-  CATKIN_DEPENDS ar_pose bfl geometry_msgs std_msgs tf message_runtime
+  CATKIN_DEPENDS ar_pose bfl geometry_msgs std_msgs tf message_runtime libartoolkit
 #  DEPENDS system_lib
 )
 
@@ -127,6 +131,8 @@ add_executable(robot_pose_fslam
     src/fslam_node.cpp
 )
 
+add_dependencies(robot_pose_fslam ${PROJECT_NAME}_generate_messages_cpp)
+
 set_target_properties(robot_pose_fslam PROPERTIES COMPILE_FLAGS -fpermissive)
 set_target_properties(robot_pose_fslam_test PROPERTIES COMPILE_FLAGS -fpermissive)
 
@@ -143,6 +149,7 @@ target_link_libraries(robot_pose_fslam_test
 target_link_libraries(robot_pose_fslam
   ${catkin_LIBRARIES}
   ${BFL_LIBRARIES}
+  ${GLU_LIBRARIES}
 )
 
 #############

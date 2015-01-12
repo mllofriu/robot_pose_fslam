@@ -16,36 +16,38 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //
 
-
 #ifndef __NON_LINEAR_SYSTEM_MOBILE__
 #define __NON_LINEAR_SYSTEM_MOBILE__
 
 #include <pdf/conditionalpdf.h>
 #include <pdf/gaussian.h>
-
 #include <tf/transform_datatypes.h>
+#include <cstddef>
+#include <vector>
+#include <TransformWithCovarianceStamped.h>
 
-namespace BFL
-{
-  /// Non Linear Conditional Gaussian
-  class NonlinearSystemPdf : public ConditionalPdf<tf::Transform, tf::Transform>
-    {
-    public:
-      /// Constructor
-      /** @param additiveNoise Pdf representing the additive Gaussian uncertainty
-      */
-      NonlinearSystemPdf( const Gaussian& additiveNoise);
+namespace BFL {
+/// Non Linear Conditional Gaussian
+class NonlinearSystemPdf: public ConditionalPdf<
+		std::vector<robot_pose_fslam::TransformWithCovarianceStamped>,
+		std::vector<robot_pose_fslam::TransformWithCovarianceStamped> > {
+public:
+	/// Constructor
+	/** @param additiveNoise Pdf representing the additive Gaussian uncertainty
+	 */
+	NonlinearSystemPdf(const Gaussian& additiveNoise);
 
-      /// Destructor
-      virtual ~NonlinearSystemPdf();
+	/// Destructor
+	virtual ~NonlinearSystemPdf();
 
-      // implement this virtual function for system model of a particle filter
-      virtual bool SampleFrom (Sampletf::Transform>& one_sample, int method=DEFAULT, void * args=NULL) const;
+	// implement this virtual function for system model of a particle filter
+	virtual bool SampleFrom(
+			Sample<std::vector<robot_pose_fslam::TransformWithCovarianceStamped> >& one_sample,
+			int method = DEFAULT, void * args = NULL) const;
 
-    private:
-      Gaussian _additiveNoise;
-
-    };
+private:
+	Gaussian _additiveNoise;
+};
 
 } // End namespace BFL
 
