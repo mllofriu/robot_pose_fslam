@@ -100,10 +100,10 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br, std::string & robotFr
 				tf::Transform t;
 				transformMsgToTF(stateIter->transform.transform, t);
 				//		ROS_INFO("Particle x %f", t.getOrigin().getX());
-				char child_frame[15];
-				sprintf(&child_frame[0], "part%dM%d", i, j);
+				char marker_frame[15];
+				sprintf(&marker_frame[0], "part%d%s", i, stateIter->child_frame_id.c_str());
 				tf::StampedTransform st(t, stateIter->header.stamp,
-						stateIter->header.frame_id, child_frame);
+						child_frame, marker_frame);
 				br.sendTransform(st);
 				j++;
 			}

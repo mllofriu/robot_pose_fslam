@@ -56,7 +56,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 			"/ar_pose/ar_pose_marker", 1);
 	message_filters::Cache<ar_pose::ARMarkers> cache(sub, 1);
 
-	TransformListener tfl;
+	TransformListener tfl(Duration(60));
 
 	// create gaussian
 	ColumnVector sys_noise_Mu(3);
@@ -194,21 +194,22 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 			sprintf(&child_frame[0], "/M%d", lm->markers[0].id + 1);
       try {
 			  tfl.waitForTransform(robotFrame, child_frame, ros::Time(0),
-					  Duration(20));
+					  Duration(1));
 			  tfl.lookupTransform(robotFrame, child_frame, ros::Time(0),
 					  robotToMarker);
+        // Build measurement transform
+      
+			  TransformWithCovarianceStamped tlm;
+			  tlm.header = lm->markers[0].header;
+			  tlm.child_frame_id = child_frame;
+			  tlm.header.frame_id = robotFrame;
+        transformTFToMsg(robotToMarker, tlm.transform.transform);
+			  filter->Update(&meas_model, tlm);
+			  filter->mapping(tlm);
 			} catch (TransformException tfe) {
 			  ROS_ERROR("%s", tfe.what());
 		  }
-			// Build measurement transform
-      
-			TransformWithCovarianceStamped tlm;
-			tlm.header = lm->markers[0].header;
-			tlm.child_frame_id = child_frame;
-			tlm.header.frame_id = robotFrame;
-      transformTFToMsg(robotToMarker, tlm.transform.transform);
-			filter->Update(&meas_model, tlm);
-			filter->mapping(tlm);
+			
 		} else {
 			ROS_INFO("No lm received");
 		}
