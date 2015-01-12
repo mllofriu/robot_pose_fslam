@@ -49,7 +49,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 	//			"/landmark", 1);
 	//	message_filters::Cache<TransformWithCovarianceStamped> cache(sub, 1);
 	message_filters::Subscriber<ar_pose::ARMarkers> sub(nh,
-			"/ar_multi_nodelet/ar_pose_marker", 1);
+			"/ar_pose/ar_pose_marker", 1);
 	message_filters::Cache<ar_pose::ARMarkers> cache(sub, 1);
 
 	TransformListener tfl;
@@ -116,9 +116,9 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 	ros::Time tTime = ros::Time::now();
 	while (!gotTransform){
 		try {
-			tfl.waitForTransform("map", "odom", tTime,
+			tfl.waitForTransform("map", "odom", ros::Time(0),
 					Duration(20));
-			tfl.lookupTransform("map", "odom", tTime,
+			tfl.lookupTransform("map", "odom", ros::Time(0),
 					initial_t);
 			gotTransform = true;
 		} catch (TransformException tfe) {
@@ -128,10 +128,11 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 			Duration(1).sleep();
 	}
 
+//	initial_t.setRotation(initial_t.getRotation() * tf::Quaternion(tf::Vector3(0,1,0), -M_PI_2));
 	for (vector<Sample<vector<TransformWithCovarianceStamped> > >::iterator iter =
 			prior_samples.begin(); iter != prior_samples.end(); iter++) {
 		TransformWithCovarianceStamped sample;
-		sample.child_frame_id = "odom";
+		sample.child_frame_id = "robot";
 		sample.header.frame_id = "map";
 		sample.header.stamp = tTime;
 		// Copy initial odometry to samples
@@ -187,7 +188,9 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 			// Build measurement transform
 			TransformWithCovarianceStamped tlm;
 			tlm.header = lm->markers[0].header;
-			tlm.child_frame_id = "lm1";
+			char child_frame[10];
+			sprintf(&child_frame[0], "lm%d", lm->markers[0].id);
+			tlm.child_frame_id = child_frame;
 			tlm.header.frame_id = "robot";
 			tlm.transform.transform.translation.x =
 					lm->markers[0].pose.pose.position.x;

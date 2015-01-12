@@ -94,7 +94,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES robot_pose_fslam
-  CATKIN_DEPENDS ar_pose bfl geometry_msgs std_msgs tf message_runtime libartoolkit
+  CATKIN_DEPENDS ar_pose geometry_msgs std_msgs tf message_runtime libartoolkit
 #  DEPENDS system_lib
 )
 

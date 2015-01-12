@@ -57,7 +57,7 @@ Probability NonlinearMeasurementPdf::ProbabilityGet(
 	transformMsgToTF(stateIter->transform.transform, stateT);
 	tf::Transform measurementT;
 	transformMsgToTF(measurement.transform.transform, measurementT);
-	measurementT *= stateT;
+	measurementT = stateT * measurementT;
 	ROS_INFO("Measurement x in world frame: %f", measurementT.getOrigin().getX());
 	//transformTFToMsg(measurementT,measurement.transform.transform);
 
