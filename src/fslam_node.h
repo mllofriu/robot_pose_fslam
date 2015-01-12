@@ -24,7 +24,7 @@
 #define SIGMA_MEAS_NOISE_Y .01
 #define SIGMA_MEAS_NOISE_Z .01
 
-#define NUM_SAMPLES 100 // Default Number of Samples
+#define NUM_SAMPLES 20 // Default Number of Samples
 #define RESAMPLE_PERIOD 0 // Default Resample Period
 #define RESAMPLE_THRESHOLD (NUM_SAMPLES/4.0) // Threshold for Dynamic Resampling
 

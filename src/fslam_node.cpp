@@ -42,7 +42,11 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 
 	init(argc, argv, "robot_pose_fslam");
 
-	NodeHandle nh;
+	NodeHandle nh("~");
+  string robotFrame;
+  nh.getParam("robotFrame", robotFrame);
+  ROS_INFO_STREAM("Robot frame: " << robotFrame);
+
 	tf::TransformBroadcaster br;
 
 	//	message_filters::Subscriber<TransformWithCovarianceStamped> sub(nh,
@@ -132,7 +136,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 	for (vector<Sample<vector<TransformWithCovarianceStamped> > >::iterator iter =
 			prior_samples.begin(); iter != prior_samples.end(); iter++) {
 		TransformWithCovarianceStamped sample;
-		sample.child_frame_id = "odom";
+		sample.child_frame_id = robotFrame;
 		sample.header.frame_id = "map";
 		sample.header.stamp = tTime;
 		// Copy initial odometry to samples
@@ -166,7 +170,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 		}
 		// Build odometry transform
 		TransformWithCovarianceStamped odomT;
-		odomT.child_frame_id = "odom";
+		odomT.child_frame_id = robotFrame;
 		odomT.header.stamp = t.stamp_;
 		odomT.header.frame_id = "map";
 //		t.setOrigin(tf::Vector3(t.getOrigin().getX(),t.getOrigin().getY(),0));
@@ -179,27 +183,30 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 		filter->Update(&sys_model, input);
 
 		// Get landmark
-
 		ar_pose::ARMarkersConstPtr lm = cache.getElemBeforeTime(now);
 
 		if (lm != NULL && lm->markers.size() > 0
 				&& lm->markers[0].header.stamp > lastUpdate) {
 			ROS_INFO("Received lm at %d", lm->markers[0].header.stamp.sec);
+      // Look for transform between robotFrame and marker 
+      StampedTransform robotToMarker;      
+      char child_frame[10];
+			sprintf(&child_frame[0], "M%d", lm->markers[0].id);
+      try {
+			  tfl.waitForTransform(robotFrame, child_frame, ros::Time(0),
+					  Duration(20));
+			  tfl.lookupTransform(robotFrame, child_frame, ros::Time(0),
+					  robotToMarker);
+			} catch (TransformException tfe) {
+			  ROS_ERROR("%s", tfe.what());
+		  }
 			// Build measurement transform
+      
 			TransformWithCovarianceStamped tlm;
 			tlm.header = lm->markers[0].header;
-			char child_frame[10];
-			sprintf(&child_frame[0], "lm%d", lm->markers[0].id);
 			tlm.child_frame_id = child_frame;
-			tlm.header.frame_id = "robot";
-			tlm.transform.transform.translation.x =
-					lm->markers[0].pose.pose.position.x;
-			tlm.transform.transform.translation.y =
-					lm->markers[0].pose.pose.position.y;
-			tlm.transform.transform.translation.z =
-					lm->markers[0].pose.pose.position.z;
-			tlm.transform.transform.rotation =
-					lm->markers[0].pose.pose.orientation;
+			tlm.header.frame_id = robotFrame;
+      transformTFToMsg(robotToMarker, tlm.transform.transform);
 			filter->Update(&meas_model, tlm);
 			filter->mapping(tlm);
 		} else {
