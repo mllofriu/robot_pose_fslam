@@ -214,7 +214,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 		}
 
 		if (publish_tf_)
-			filter->publishTF(br, robotFrame);
+			filter->publishTF(br);
 
 		lastUpdate = now;
 		r.sleep();
