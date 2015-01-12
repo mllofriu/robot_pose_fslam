@@ -191,7 +191,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
       // Look for transform between robotFrame and marker 
       StampedTransform robotToMarker;      
       char child_frame[10];
-			sprintf(&child_frame[0], "M%d", lm->markers[0].id);
+			sprintf(&child_frame[0], "/M%d", lm->markers[0].id + 1);
       try {
 			  tfl.waitForTransform(robotFrame, child_frame, ros::Time(0),
 					  Duration(20));
