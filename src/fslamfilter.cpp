@@ -75,7 +75,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br) {
 		vector<TransformWithCovarianceStamped>::iterator stateIter;
 		for (stateIter = state.begin();
 				stateIter != state.end()
-						&& stateIter->child_frame_id.compare("robot") != 0;
+						&& stateIter->child_frame_id.compare("odom") != 0;
 				stateIter++)
 			;
 
@@ -96,7 +96,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br) {
 		// Publish landmarks
 		int j = 0;
 		for (stateIter = state.begin(); stateIter != state.end(); stateIter++) {
-			if (stateIter->child_frame_id.compare("robot") != 0) {
+			if (stateIter->child_frame_id.compare("odom") != 0) {
 				tf::Transform t;
 				transformMsgToTF(stateIter->transform.transform, t);
 				//		ROS_INFO("Particle x %f", t.getOrigin().getX());

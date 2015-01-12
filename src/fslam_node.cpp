@@ -132,7 +132,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 	for (vector<Sample<vector<TransformWithCovarianceStamped> > >::iterator iter =
 			prior_samples.begin(); iter != prior_samples.end(); iter++) {
 		TransformWithCovarianceStamped sample;
-		sample.child_frame_id = "robot";
+		sample.child_frame_id = "odom";
 		sample.header.frame_id = "map";
 		sample.header.stamp = tTime;
 		// Copy initial odometry to samples

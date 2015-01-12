@@ -65,7 +65,7 @@ bool NonlinearSystemPdf::SampleFrom(
 		transformMsgToTF(stateIter->transform.transform, oldT);
 		tf::Transform change;
 		transformMsgToTF(odomIter->transform.transform, change);
-		oldT.mult(change,oldT);
+		oldT.mult(oldT,change); 
 
 		Sample<ColumnVector> noise;
 		Sample<ColumnVector> noise2;
