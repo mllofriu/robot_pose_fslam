@@ -128,9 +128,12 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 		} catch (TransformException tfe) {
 			ROS_ERROR("%s", tfe.what());
 		}
-		if (!gotTransform)
+		if (!gotTransform){
 			Duration(1).sleep();
+      ROS_INFO("Odom to map not available, sleeping");
+    }
 	}
+  ROS_INFO("First Odom Aquired");
 
 //	initial_t.setRotation(initial_t.getRotation() * tf::Quaternion(tf::Vector3(0,1,0), -M_PI_2));
 	for (vector<Sample<vector<TransformWithCovarianceStamped> > >::iterator iter =
