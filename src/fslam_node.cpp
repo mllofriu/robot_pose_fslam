@@ -196,9 +196,9 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
       char child_frame[10];
 			sprintf(&child_frame[0], "/M%d", lm->markers[0].id + 1);
       try {
-			  tfl.waitForTransform(robotFrame, child_frame, ros::Time(0),
+			  tfl.waitForTransform(robotFrame, child_frame, now,
 					  Duration(1));
-			  tfl.lookupTransform(robotFrame, child_frame, ros::Time(0),
+			  tfl.lookupTransform(robotFrame, child_frame, now,
 					  robotToMarker);
         // Build measurement transform
       

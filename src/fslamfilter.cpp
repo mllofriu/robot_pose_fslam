@@ -45,7 +45,6 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 								measurement.child_frame_id) != 0; lmIter++)
 			;
 
-		// If landmark is not in the map just return
 		if (lmIter == state.end()) {
 			// TODO: covariance change?
 			ROS_INFO("Adding lm to the map ");
@@ -53,7 +52,7 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 			transformMsgToTF(stateIter->transform.transform, stateT);
 			tf::Transform measurementT;
 			transformMsgToTF(measurement.transform.transform, measurementT);
-			measurementT = stateT * measurementT;
+			measurementT.mult(stateT,measurementT);
 			transformTFToMsg(measurementT, measurement.transform.transform);
 			measurement.header.frame_id = stateIter->header.frame_id;
 			// TODO: Covariance
@@ -103,7 +102,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br, std::string & robotFr
 				char marker_frame[15];
 				sprintf(&marker_frame[0], "part%d%s", i, stateIter->child_frame_id.c_str());
 				tf::StampedTransform st(t, stateIter->header.stamp,
-						child_frame, marker_frame);
+						stateIter->header.frame_id, marker_frame);
 				br.sendTransform(st);
 				j++;
 			}
