@@ -115,26 +115,9 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 	// Discrete prior for Particle filter (using the continuous Gaussian prior)
 	vector<Sample<vector<TransformWithCovarianceStamped> > > prior_samples(
 			NUM_SAMPLES);
-	StampedTransform initial_t;
-	bool gotTransform = false;
+	Transform initial_t(tf::Quaternion(tf::Vector3(0,0,1), 0))  ;
 	ros::Time tTime = ros::Time::now();
-	while (!gotTransform){
-		try {
-			tfl.waitForTransform("map", "odom", ros::Time(0),
-					Duration(20));
-			tfl.lookupTransform("map", "odom", ros::Time(0),
-					initial_t);
-			gotTransform = true;
-		} catch (TransformException tfe) {
-			ROS_ERROR("%s", tfe.what());
-		}
-		if (!gotTransform){
-			Duration(1).sleep();
-      ROS_INFO("Odom to map not available, sleeping");
-    }
-	}
-  ROS_INFO("First Odom Aquired");
-
+	
 //	initial_t.setRotation(initial_t.getRotation() * tf::Quaternion(tf::Vector3(0,1,0), -M_PI_2));
 	for (vector<Sample<vector<TransformWithCovarianceStamped> > >::iterator iter =
 			prior_samples.begin(); iter != prior_samples.end(); iter++) {
