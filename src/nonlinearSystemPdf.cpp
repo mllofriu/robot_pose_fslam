@@ -71,9 +71,9 @@ bool NonlinearSystemPdf::SampleFrom(
 		Sample<ColumnVector> noise2;
 		_additiveNoise.SampleFrom(noise, 0, NULL);
 		_additiveNoise.SampleFrom(noise2, 0, NULL);
-		tf::Vector3 transNoise = tf::Vector3(noise.ValueGet()(1),noise.ValueGet()(2), noise2.ValueGet()(1));
+		tf::Vector3 transNoise = tf::Vector3(noise.ValueGet()(1)*change.getOrigin().getX(),noise.ValueGet()(2)*change.getOrigin().getY(), noise2.ValueGet()(1)*change.getOrigin().getZ());
 		oldT.setOrigin(oldT.getOrigin() + transNoise);
-		oldT.setRotation(oldT.getRotation() * tf::Quaternion(tf::Vector3(0,0,1), noise.ValueGet()(3)));
+		oldT.setRotation(oldT.getRotation() * tf::Quaternion(tf::Vector3(0,0,1), noise.ValueGet()(3) * change.getRotation().getAngle()));
 
 //		ROS_INFO("New x %f", oldT.getOrigin().getX());
 

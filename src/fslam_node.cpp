@@ -174,7 +174,7 @@ FSLAMNode::FSLAMNode(int argc, char ** argv) {
 		// Build odometry transform
 		TransformWithCovarianceStamped odomT;
 		odomT.child_frame_id = robotFrame;
-		odomT.header.stamp = t.stamp_;
+		odomT.header.stamp = now;
 		odomT.header.frame_id = "map";
 //		t.setOrigin(tf::Vector3(t.getOrigin().getX(),t.getOrigin().getY(),0));
 //		t.setRotation(tf::Quaternion().getIdentity());
