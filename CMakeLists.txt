@@ -124,6 +124,10 @@ add_executable(robot_pose_fslam_test
     src/test_nonlinear_particle.cpp
 )
 
+add_executable(tf_average
+    src/tf_average.cpp
+)
+
 add_executable(robot_pose_fslam
     src/nonlinearSystemPdf.cpp 
     src/nonlinearMeasurementPdf.cpp 
@@ -145,7 +149,9 @@ target_link_libraries(robot_pose_fslam_test
   ${catkin_LIBRARIES}
   ${BFL_LIBRARIES}
 )
-
+target_link_libraries(tf_average
+  ${catkin_LIBRARIES}
+)
 target_link_libraries(robot_pose_fslam
   ${catkin_LIBRARIES}
   ${BFL_LIBRARIES}
