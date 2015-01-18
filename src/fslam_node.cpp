@@ -5,13 +5,11 @@
  *      Author: biorob
  */
 
-#include "ros/ros.h"
-#include <ros/node_handle.h>
+
+#include "fslam_node.h"
 
 #include <message_filters/subscriber.h>
 #include <message_filters/cache.h>
-
-#include "fslam_node.h"
 
 #include <model/systemmodel.h>
 #include <model/measurementmodel.h>
@@ -36,16 +34,13 @@ using namespace std;
 using namespace tf;
 using namespace ros;
 
-FSLAMNode::FSLAMNode(int argc, char ** argv) {
+FSLAMNode::FSLAMNode(NodeHandle & nh) {
 	// TODO: read from parameters
 	publish_tf_ = true;
 
-	init(argc, argv, "robot_pose_fslam");
-
-	NodeHandle nh("~");
-  string robotFrame;
-  nh.getParam("robotFrame", robotFrame);
-  ROS_INFO_STREAM("Robot frame: " << robotFrame);
+	string robotFrame;
+	nh.getParam("robotFrame", robotFrame);
+	ROS_INFO_STREAM("Robot frame: " << robotFrame);
 
 	tf::TransformBroadcaster br;
 
@@ -214,6 +209,8 @@ FSLAMNode::~FSLAMNode() {
 }
 
 int main(int argc, char** argv) {
-	FSLAMNode filter(argc, argv);
+	init(argc, argv, "robot_pose_fslam");
+	NodeHandle nh("~");
+	FSLAMNode filter(nh);
 }
 

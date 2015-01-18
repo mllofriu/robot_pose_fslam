@@ -9,6 +9,7 @@
 #define FSLAMNODE_H_
 
 #include "fslamfilter.h"
+#include <ros/ros.h>
 
 #define MU_SYSTEM_NOISE_X 0.0
 #define MU_SYSTEM_NOISE_Y 0.0
@@ -32,7 +33,7 @@
 
 class FSLAMNode {
 public:
-	FSLAMNode(int argc, char ** argv);
+	FSLAMNode(ros::NodeHandle & n);
 	virtual ~FSLAMNode();
 
 private:
