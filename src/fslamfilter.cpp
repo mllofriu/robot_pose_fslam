@@ -20,8 +20,8 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 
 	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
 		TransformWithCovarianceStamped measurement(m);
-		ROS_INFO("Measurement frame %s", measurement.header.frame_id.c_str());
-		ROS_INFO(
+		ROS_DEBUG("Measurement frame %s", measurement.header.frame_id.c_str());
+		ROS_DEBUG(
 				"Measurement child frame %s", measurement.child_frame_id.c_str());
 		vector<TransformWithCovarianceStamped> state =
 				mcpdf->SampleGet(i).ValueGet();
@@ -47,7 +47,7 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 
 		if (lmIter == state.end()) {
 			// TODO: covariance change?
-			ROS_INFO("Adding lm to the map ");
+			ROS_DEBUG("Adding lm to the map ");
 			tf::Transform stateT;
 			transformMsgToTF(stateIter->transform.transform, stateT);
 			tf::Transform measurementT;
@@ -90,7 +90,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br, std::string & robotFr
     
 //		ROS_INFO("Particle x %f", t.getOrigin().getX());
 		char child_frame[10];
-    ros::Time partTime = stateIter->header.stamp;
+		ros::Time partTime = stateIter->header.stamp;
 		sprintf(&child_frame[0], "part%d", i);
 		tf::StampedTransform st(t, partTime,
 				stateIter->header.frame_id, child_frame);
@@ -123,6 +123,6 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br, std::string & robotFr
 
   
   br.sendTransform(tf::StampedTransform(robotT, ros::Time::now(), "map", "robot"));
-	ROS_INFO("TF particles published");
+  ROS_DEBUG("TF particles published");
 }
 

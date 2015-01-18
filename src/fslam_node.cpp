@@ -168,7 +168,7 @@ FSLAMNode::FSLAMNode(NodeHandle & nh) {
 
 		if (lm != NULL && lm->markers.size() > 0
 				&& lm->markers[0].header.stamp > lastUpdate) {
-			ROS_INFO("Received lm at %d", lm->markers[0].header.stamp.sec);
+			ROS_DEBUG("Received lm at %d", lm->markers[0].header.stamp.sec);
       // Look for transform between robotFrame and marker 
       StampedTransform robotToMarker;      
       char child_frame[10];
@@ -192,7 +192,7 @@ FSLAMNode::FSLAMNode(NodeHandle & nh) {
 		  }
 			
 		} else {
-			ROS_INFO("No lm received");
+			ROS_DEBUG("No lm received");
 		}
 
 		if (publish_tf_)

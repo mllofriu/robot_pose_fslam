@@ -58,7 +58,7 @@ Probability NonlinearMeasurementPdf::ProbabilityGet(
 	tf::Transform measurementT;
 	transformMsgToTF(measurement.transform.transform, measurementT);
 	measurementT = stateT * measurementT;
-	ROS_INFO("Measurement x in world frame: %f", measurementT.getOrigin().getX());
+	ROS_DEBUG("Measurement x in world frame: %f", measurementT.getOrigin().getX());
 	//transformTFToMsg(measurementT,measurement.transform.transform);
 
 	vector<TransformWithCovarianceStamped>::iterator lmIter;
@@ -77,17 +77,17 @@ Probability NonlinearMeasurementPdf::ProbabilityGet(
 	// using the distance between transforms
 	tf::Transform oldMeasT;
 	transformMsgToTF(lmIter->transform.transform, oldMeasT);
-	ROS_INFO("Landmark x in world frame: %f", oldMeasT.getOrigin().getX());
+	ROS_DEBUG("Landmark x in world frame: %f", oldMeasT.getOrigin().getX());
 	measurementT = oldMeasT.inverse() * measurementT;
 	// Calculate the difference between the old transform and new transform using inverse
 	// and measNois prior
 	// TODO: use both the lm covariance and measure covariance to find prob.
 	ColumnVector diff(3);
-	ROS_INFO("Diff x: %f", measurementT.getOrigin().getX());
+	ROS_DEBUG("Diff x: %f", measurementT.getOrigin().getX());
 	diff(1) = measurementT.getOrigin().getX();
 	diff(2) = measurementT.getOrigin().getY();
 	diff(3) = measurementT.getOrigin().getZ();
-	ROS_INFO("Measurement probability %f",_measNoise.ProbabilityGet(diff).getValue() );
+	ROS_DEBUG("Measurement probability %f",_measNoise.ProbabilityGet(diff).getValue() );
 	return _measNoise.ProbabilityGet(diff);
 }
 

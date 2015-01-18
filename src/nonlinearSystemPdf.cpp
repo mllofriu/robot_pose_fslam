@@ -75,7 +75,7 @@ bool NonlinearSystemPdf::SampleFrom(
 		oldT.setOrigin(oldT.getOrigin() + transNoise);
 		oldT.setRotation(oldT.getRotation() * tf::Quaternion(tf::Vector3(0,0,1), noise.ValueGet()(3) * change.getRotation().getAngle()));
 
-//		ROS_INFO("New x %f", oldT.getOrigin().getX());
+//		ROS_DEBUG("New x %f", oldT.getOrigin().getX());
 
 		transformTFToMsg(oldT,stateIter->transform.transform);
 		stateIter->header.stamp = odomIter->header.stamp;
