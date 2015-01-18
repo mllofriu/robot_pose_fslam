@@ -12,7 +12,7 @@
 class FSLAMNodelet : public nodelet::Nodelet {
 public:
 	FSLAMNodelet() {};
-	virtual FSLAMNodelet(){};
+	virtual ~FSLAMNodelet(){};
 
 	virtual void onInit()
 	  {

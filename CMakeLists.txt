@@ -134,6 +134,7 @@ add_library(robot_pose_fslam_nodelet
     src/nonlinearMeasurementPdf.cpp 
     src/fslamfilter.cpp
     src/fslam_node.cpp
+    src/fslam_nodelet.cpp
 )
 
 add_dependencies(robot_pose_fslam_nodelet ${PROJECT_NAME}_generate_messages_cpp)
