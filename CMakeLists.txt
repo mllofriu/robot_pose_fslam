@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   message_generation
+  nodelet
 )
 
 ## System dependencies are found with CMake's conventions
@@ -128,16 +129,16 @@ add_executable(tf_average
     src/tf_average.cpp
 )
 
-add_executable(robot_pose_fslam
+add_library(robot_pose_fslam_nodelet
     src/nonlinearSystemPdf.cpp 
     src/nonlinearMeasurementPdf.cpp 
     src/fslamfilter.cpp
     src/fslam_node.cpp
 )
 
-add_dependencies(robot_pose_fslam ${PROJECT_NAME}_generate_messages_cpp)
+add_dependencies(robot_pose_fslam_nodelet ${PROJECT_NAME}_generate_messages_cpp)
 
-set_target_properties(robot_pose_fslam PROPERTIES COMPILE_FLAGS -fpermissive)
+set_target_properties(robot_pose_fslam_nodelet PROPERTIES COMPILE_FLAGS -fpermissive)
 set_target_properties(robot_pose_fslam_test PROPERTIES COMPILE_FLAGS -fpermissive)
 
 ## Add cmake target dependencies of the executable/library
@@ -152,7 +153,7 @@ target_link_libraries(robot_pose_fslam_test
 target_link_libraries(tf_average
   ${catkin_LIBRARIES}
 )
-target_link_libraries(robot_pose_fslam
+target_link_libraries(robot_pose_fslam_nodelet
   ${catkin_LIBRARIES}
   ${BFL_LIBRARIES}
   ${GLU_LIBRARIES}
