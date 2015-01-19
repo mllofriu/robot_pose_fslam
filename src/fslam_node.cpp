@@ -5,7 +5,6 @@
  *      Author: biorob
  */
 
-
 #include "fslam_node.h"
 
 #include <message_filters/subscriber.h>
@@ -110,9 +109,9 @@ FSLAMNode::FSLAMNode(NodeHandle & nh) {
 	// Discrete prior for Particle filter (using the continuous Gaussian prior)
 	vector<Sample<vector<TransformWithCovarianceStamped> > > prior_samples(
 			NUM_SAMPLES);
-	Transform initial_t(tf::Quaternion(tf::Vector3(0,0,1), 0))  ;
+	Transform initial_t(tf::Quaternion(tf::Vector3(0, 0, 1), 0));
 	ros::Time tTime = ros::Time::now();
-	
+
 //	initial_t.setRotation(initial_t.getRotation() * tf::Quaternion(tf::Vector3(0,1,0), -M_PI_2));
 	for (vector<Sample<vector<TransformWithCovarianceStamped> > >::iterator iter =
 			prior_samples.begin(); iter != prior_samples.end(); iter++) {
@@ -142,10 +141,9 @@ FSLAMNode::FSLAMNode(NodeHandle & nh) {
 		// Find odometry transform since last update
 		StampedTransform t;
 		try {
-			tfl.waitForTransform("odom", lastUpdate, "odom", now,
-					"map", Duration(.5));
-			tfl.lookupTransform("odom", lastUpdate, "odom", now,
-					"map", t);
+			tfl.waitForTransform("odom", lastUpdate, "odom", now, "map",
+					Duration(.5));
+			tfl.lookupTransform("odom", lastUpdate, "odom", now, "map", t);
 		} catch (TransformException tfe) {
 			ROS_ERROR("%s", tfe.what());
 		}
@@ -166,31 +164,33 @@ FSLAMNode::FSLAMNode(NodeHandle & nh) {
 		// Get landmark
 		ar_pose::ARMarkersConstPtr lm = cache.getElemBeforeTime(now);
 
-		if (lm != NULL && lm->markers.size() > 0
+		// Filters: only one marker at a time, z coordinate > 0, confidence > 80
+		if (lm != NULL && lm->markers.size() == 1
+				&& lm->markers[0].pose.pose.position.z > 0
+				&& lm->markers[0].confidence > 85
 				&& lm->markers[0].header.stamp > lastUpdate) {
 			ROS_DEBUG("Received lm at %d", lm->markers[0].header.stamp.sec);
-      // Look for transform between robotFrame and marker 
-      StampedTransform robotToMarker;      
-      char child_frame[10];
+			// Look for transform between robotFrame and marker
+			StampedTransform robotToMarker;
+			char child_frame[10];
 			sprintf(&child_frame[0], "/M%d", lm->markers[0].id + 1);
-      try {
-			  tfl.waitForTransform(robotFrame, child_frame, now,
-					  Duration(1));
-			  tfl.lookupTransform(robotFrame, child_frame, now,
-					  robotToMarker);
-        // Build measurement transform
-      
-			  TransformWithCovarianceStamped tlm;
-			  tlm.header = lm->markers[0].header;
-			  tlm.child_frame_id = child_frame;
-			  tlm.header.frame_id = robotFrame;
-        transformTFToMsg(robotToMarker, tlm.transform.transform);
-			  filter->Update(&meas_model, tlm);
-			  filter->mapping(tlm);
+			try {
+				tfl.waitForTransform(robotFrame, child_frame, now, Duration(1));
+				tfl.lookupTransform(robotFrame, child_frame, now,
+						robotToMarker);
+				// Build measurement transform
+
+				TransformWithCovarianceStamped tlm;
+				tlm.header = lm->markers[0].header;
+				tlm.child_frame_id = child_frame;
+				tlm.header.frame_id = robotFrame;
+				transformTFToMsg(robotToMarker, tlm.transform.transform);
+				filter->Update(&meas_model, tlm);
+				filter->mapping(tlm);
 			} catch (TransformException tfe) {
-			  ROS_ERROR("%s", tfe.what());
-		  }
-			
+				ROS_ERROR("%s", tfe.what());
+			}
+
 		} else {
 			ROS_DEBUG("No lm received");
 		}
