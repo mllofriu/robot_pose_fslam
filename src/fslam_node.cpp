@@ -33,12 +33,17 @@ using namespace std;
 using namespace tf;
 using namespace ros;
 
-FSLAMNode::FSLAMNode(NodeHandle & nh) {
-	// TODO: read from parameters
+FSLAMNode::FSLAMNode(NodeHandle & nh) :
+		n(nh) {
+	slamThread = new boost::thread(boost::bind(&FSLAMNode::doSLAM, this));
+}
+
+void FSLAMNode::doSLAM() {
+// TODO: read from parameters
 	publish_tf_ = true;
 
 	string robotFrame;
-	nh.getParam("robotFrame", robotFrame);
+	n.getParam("robotFrame", robotFrame);
 	ROS_INFO_STREAM("Robot frame: " << robotFrame);
 
 	tf::TransformBroadcaster br;
@@ -46,10 +51,11 @@ FSLAMNode::FSLAMNode(NodeHandle & nh) {
 	//	message_filters::Subscriber<TransformWithCovarianceStamped> sub(nh,
 	//			"/landmark", 1);
 	//	message_filters::Cache<TransformWithCovarianceStamped> cache(sub, 1);
-	message_filters::Subscriber<ar_pose::ARMarkers> sub(nh,
+	message_filters::Subscriber<ar_pose::ARMarkers> sub(n,
 			"/ar_pose/ar_pose_marker", 1);
 	message_filters::Cache<ar_pose::ARMarkers> cache(sub, 1);
 
+	// TODO: decrease this
 	TransformListener tfl(Duration(60));
 
 	// create gaussian
@@ -175,7 +181,7 @@ FSLAMNode::FSLAMNode(NodeHandle & nh) {
 			char child_frame[10];
 			sprintf(&child_frame[0], "/M%d", lm->markers[0].id + 1);
 			try {
-				tfl.waitForTransform(robotFrame, child_frame, now, Duration(1));
+				tfl.waitForTransform(robotFrame, child_frame, now, Duration(3));
 				tfl.lookupTransform(robotFrame, child_frame, now,
 						robotToMarker);
 				// Build measurement transform
@@ -201,7 +207,6 @@ FSLAMNode::FSLAMNode(NodeHandle & nh) {
 		lastUpdate = now;
 		r.sleep();
 	}
-
 }
 
 FSLAMNode::~FSLAMNode() {
@@ -212,5 +217,7 @@ int main(int argc, char** argv) {
 	init(argc, argv, "robot_pose_fslam");
 	NodeHandle nh("~");
 	FSLAMNode filter(nh);
+
+	ros::spin();
 }
 
