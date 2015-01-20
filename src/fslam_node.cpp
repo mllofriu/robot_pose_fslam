@@ -56,7 +56,7 @@ void FSLAMNode::doSLAM() {
 	message_filters::Cache<ar_pose::ARMarkers> cache(sub, 1);
 
 	// TODO: decrease this
-	TransformListener tfl(Duration(60));
+	TransformListener tfl;
 
 	// create gaussian
 	ColumnVector sys_noise_Mu(3);

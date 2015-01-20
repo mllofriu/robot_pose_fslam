@@ -16,7 +16,7 @@ public:
 
 	virtual void onInit()
 	  {
-	    ros::NodeHandle nh = this->getPrivateNodeHandle();
+	    ros::NodeHandle nh = this->getMTPrivateNodeHandle();
 
 	    // resolve node(let) name
 	    std::string name = nh.getUnresolvedNamespace();
