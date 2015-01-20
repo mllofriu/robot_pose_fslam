@@ -29,8 +29,8 @@ public:
 
 private:
 
-	void publishVisualMarker(std::string frame_id,
-			ros::Time stamp, std::string mId);
+	void publishVisualMarker(std::string frame_id, ros::Time stamp,
+			std::string mId);
 
 	ros::Publisher rvizMarkerPub_;
 };

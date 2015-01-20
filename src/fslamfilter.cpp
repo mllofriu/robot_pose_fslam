@@ -66,7 +66,6 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 			mcpdf->SampleGet(i).ValueSet(state);
 			lmAdded = true;
 		}
-
 		// TODO: Kalman filter
 	}
 
