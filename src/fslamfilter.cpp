@@ -65,7 +65,7 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 
 }
 
-void FSLAMFilter::publishTF(tf::TransformBroadcaster & br, std::string & robotFrame) {
+void FSLAMFilter::publishTF(tf::TransformBroadcaster & br, std::string & robotFrame, bool publishLandmarks) {
   tf::Transform robotT;
 
 	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
@@ -104,20 +104,22 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br, std::string & robotFr
     //robotT.mult(robotT, t);
 
 		// Publish landmarks
-		int j = 0;
-		for (stateIter = state.begin(); stateIter != state.end(); stateIter++) {
-			if (stateIter->child_frame_id.compare(robotFrame) != 0) {
-				tf::Transform t;
-				transformMsgToTF(stateIter->transform.transform, t);
-				//		ROS_INFO("Particle x %f", t.getOrigin().getX());
-				char marker_frame[15];
-				sprintf(&marker_frame[0], "part%d%s", i, stateIter->child_frame_id.c_str());
-				tf::StampedTransform st(t, partTime,
-						stateIter->header.frame_id, marker_frame);
-				br.sendTransform(st);
-				j++;
+    	if (publishLandmarks){
+			int j = 0;
+			for (stateIter = state.begin(); stateIter != state.end(); stateIter++) {
+				if (stateIter->child_frame_id.compare(robotFrame) != 0) {
+					tf::Transform t;
+					transformMsgToTF(stateIter->transform.transform, t);
+					//		ROS_INFO("Particle x %f", t.getOrigin().getX());
+					char marker_frame[15];
+					sprintf(&marker_frame[0], "part%d%s", i, stateIter->child_frame_id.c_str());
+					tf::StampedTransform st(t, partTime,
+							stateIter->header.frame_id, marker_frame);
+					br.sendTransform(st);
+					j++;
+				}
 			}
-		}
+    	}
 
 	}
 

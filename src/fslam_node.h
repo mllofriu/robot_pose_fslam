@@ -30,6 +30,8 @@
 #define RESAMPLE_PERIOD 0 // Default Resample Period
 #define RESAMPLE_THRESHOLD (NUM_SAMPLES/4.0) // Threshold for Dynamic Resampling
 
+#define PUBLISH_LMS_TIME 30
+
 #define FILTER_RATE 1 
 
 class FSLAMNode {

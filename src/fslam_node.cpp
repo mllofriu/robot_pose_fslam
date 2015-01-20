@@ -137,6 +137,8 @@ void FSLAMNode::doSLAM() {
 
 	ros::Rate r(FILTER_RATE);
 	ros::Time lastUpdate = ros::Time::now();
+	int timeSinceLMPublished = 0;
+	bool updated = false;
 	while (ros::ok()) {
 		// Spin to let the caches fill themselves
 		ros::spinOnce();
@@ -194,6 +196,8 @@ void FSLAMNode::doSLAM() {
 				transformTFToMsg(robotToMarker, tlm.transform.transform);
 				filter->Update(&meas_model, tlm);
 				filter->mapping(tlm);
+
+				updated = true;
 			} catch (TransformException tfe) {
 				ROS_ERROR("%s", tfe.what());
 			}
@@ -202,8 +206,17 @@ void FSLAMNode::doSLAM() {
 			ROS_DEBUG("No lm received");
 		}
 
-		if (publish_tf_)
-			filter->publishTF(br, robotFrame);
+		if (publish_tf_){
+			timeSinceLMPublished++;
+
+			filter->publishTF(br, robotFrame, timeSinceLMPublished > PUBLISH_LMS_TIME || updated);
+
+			if (timeSinceLMPublished || updated)
+				timeSinceLMPublished = 0;
+
+			updated = false;
+		}
+
 
 		lastUpdate = now;
 		r.sleep();
