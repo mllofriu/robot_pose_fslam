@@ -173,7 +173,7 @@ void FSLAMNode::doSLAM() {
 		// Filters: only one marker at a time, z coordinate > 0, confidence > 80, not much movement
 		if (lm != NULL && lm->markers.size() == 1
 				&& lm->markers[0].pose.pose.position.z > 0
-				&& lm->markers[0].confidence > 85
+				&& lm->markers[0].confidence > 80
 				&& lm->markers[0].header.stamp > lastUpdate
 				&& t.getOrigin().length() < 0.05 && t.getRotation().getAngle() < M_PI / 20) {
 			ROS_DEBUG("Received lm at %d", lm->markers[0].header.stamp.sec);
