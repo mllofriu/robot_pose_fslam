@@ -28,8 +28,8 @@ public:
 			bool publishLandmarks);
 
 private:
-	void publishVisualMarker(tf::StampedTransform pose, std::string frame_id,
-			ros::Time stamp, int markerId, std::string mId);
+	void publishVisualMarker(std::string frame_id,
+			ros::Time stamp, std::string mId);
 
 	ros::Publisher rvizMarkerPub_;
 };
