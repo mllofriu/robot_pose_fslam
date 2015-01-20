@@ -171,7 +171,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 			if (stateIter->child_frame_id.compare(robotFrame) != 0) {
 				char marker_frame[15];
 				sprintf(&marker_frame[0], "slam%s", stateIter->child_frame_id.c_str());
-				publishVisualMarker("map", ros::Time::now(), marker_frame);
+				publishVisualMarker(marker_frame, ros::Time::now(), marker_frame);
 			}
 		}
 
