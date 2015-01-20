@@ -98,7 +98,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br, std::string & robotFr
 
     // Acumulate transform for the robot pos
     t.setOrigin(t.getOrigin() / mcpdf->NumSamplesGet());
-    t.setRotation(t.getRotation() / mcpdf->NumSamplesGet());
+    t.setRotation(t.getRotation());
     robotT.setOrigin(robotT.getOrigin() + t.getOrigin());
     robotT.setRotation(robotT.getRotation() + t.getRotation());    
     //robotT.mult(robotT, t);
