@@ -73,7 +73,7 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 	if (lmAdded) {
 		char marker_frame[15];
 		sprintf(&marker_frame[0], "slam%s", m.child_frame_id.c_str());
-		publishVisualMarker(marker_frame, m.header.stamp, m.child_frame_id);
+		publishVisualMarker(marker_frame, ros::Time::now(), m.child_frame_id);
 	}
 }
 
@@ -135,6 +135,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 				landmarks.push_back(t);
 			}
 		}
+
 		// Average the position for each landmark
 		for (int i = 1; i < mcpdf->NumSamplesGet(); i++) {
 			int j = 0;
