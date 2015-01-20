@@ -21,7 +21,6 @@ FSLAMFilter::FSLAMFilter(MCPdf<vector<TransformWithCovarianceStamped> > * prior,
 }
 
 void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
-
 	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
 
 	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
@@ -64,6 +63,11 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 			// TODO: Covariance
 			state.push_back(measurement);
 			mcpdf->SampleGet(i).ValueSet(state);
+
+			char marker_frame[15];
+			sprintf(&marker_frame[0], "part%d%s", i,
+					stateIter->child_frame_id.c_str());
+			publishVisualMarker(StampedTransform(), marker_frame, measurement.header.stamp, measurement.child_frame_id);
 		}
 
 		// TODO: Kalman filter
@@ -127,8 +131,8 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 							stateIter->header.frame_id, marker_frame);
 					br.sendTransform(st);
 					// Send the landmark
-					publishVisualMarker(st, stateIter->header.frame_id,
-							partTime, i * 4 + j, stateIter->child_frame_id);
+//					publishVisualMarker(st, stateIter->header.frame_id,
+//							partTime, i * 4 + j, stateIter->child_frame_id);
 					j++;
 				}
 			}
@@ -142,7 +146,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 }
 
 void FSLAMFilter::publishVisualMarker(tf::StampedTransform pose,
-		string frame_id, Time stamp, int markerId, string mId) {
+		string frame_id, Time stamp, string mId) {
 	static int id = 0;
 
 	visualization_msgs::Marker rvizMarker_;
@@ -158,33 +162,31 @@ void FSLAMFilter::publishVisualMarker(tf::StampedTransform pose,
 	rvizMarker_.ns = "basic_shapes";
 	rvizMarker_.type = visualization_msgs::Marker::CUBE;
 	rvizMarker_.action = visualization_msgs::Marker::ADD;
+	rvizMarker_.frame_locked = true;
+
 	if (mId.compare("/M1") == 0) {
 		rvizMarker_.color.r = 0.0f;
 		rvizMarker_.color.g = 0.0f;
 		rvizMarker_.color.b = 1.0f;
-		rvizMarker_.color.a = 1.0;
 	} else if (mId.compare("/M2") == 0) {
 		rvizMarker_.color.r = 1.0f;
 		rvizMarker_.color.g = 0.0f;
 		rvizMarker_.color.b = 0.0f;
-		rvizMarker_.color.a = 1.0;
 	} else if (mId.compare("/M3") == 0) {
 		rvizMarker_.color.r = 1.0f;
 		rvizMarker_.color.g = 0.0f;
 		rvizMarker_.color.b = 1.0f;
-		rvizMarker_.color.a = 1.0;
 	} else if (mId.compare("/M4") == 0) {
 		rvizMarker_.color.r = 1.0f;
 		rvizMarker_.color.g = 1.0f;
 		rvizMarker_.color.b = 0.0f;
-		rvizMarker_.color.a = 1.0;
 	} else {
 		rvizMarker_.color.r = 0.0f;
 		rvizMarker_.color.g = 1.0f;
 		rvizMarker_.color.b = 0.0f;
-		rvizMarker_.color.a = 1.0;
 	}
-	rvizMarker_.lifetime = ros::Duration(30);
+	rvizMarker_.color.a = 0.5;
+	rvizMarker_.lifetime = ros::Duration();
 
 	rvizMarkerPub_.publish(rvizMarker_);
 }
