@@ -126,6 +126,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 		// Push back particle 0's landmarks transforms
 		vector<TransformWithCovarianceStamped> state =
 				mcpdf->SampleGet(0).ValueGet();
+
 		vector<TransformWithCovarianceStamped>::iterator stateIter;
 		for (stateIter = state.begin(); stateIter != state.end(); stateIter++) {
 			if (stateIter->child_frame_id.compare(robotFrame) != 0) {
@@ -139,8 +140,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 		// Average the position for each landmark
 		for (int i = 1; i < mcpdf->NumSamplesGet(); i++) {
 			int j = 0;
-			vector<TransformWithCovarianceStamped> state =
-					mcpdf->SampleGet(i).ValueGet();
+			state =	mcpdf->SampleGet(i).ValueGet();
 
 			for (stateIter = state.begin(); stateIter != state.end();
 					stateIter++) {
@@ -157,7 +157,10 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 				}
 			}
 		}
+
 		// Publish the transform for each landmark
+		state =	mcpdf->SampleGet(0).ValueGet();
+
 		for (stateIter = state.begin(); stateIter != state.end(); stateIter++) {
 			int j = 0;
 			if (stateIter->child_frame_id.compare(robotFrame) != 0) {
