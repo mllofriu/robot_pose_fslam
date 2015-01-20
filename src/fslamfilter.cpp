@@ -23,7 +23,6 @@ FSLAMFilter::FSLAMFilter(MCPdf<vector<TransformWithCovarianceStamped> > * prior,
 void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
 
-	bool lmAdded = false;
 	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
 		TransformWithCovarianceStamped measurement(m);
 		ROS_DEBUG("Measurement frame %s", measurement.header.frame_id.c_str());
@@ -64,17 +63,10 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 			// TODO: Covariance
 			state.push_back(measurement);
 			mcpdf->SampleGet(i).ValueSet(state);
-			lmAdded = true;
 		}
 		// TODO: Kalman filter
 	}
 
-	// If an LM was added, publish its marker once, using lock_frame to then correspond it to the tf published
-	if (lmAdded) {
-		char marker_frame[15];
-		sprintf(&marker_frame[0], "slam%s", m.child_frame_id.c_str());
-		publishVisualMarker(marker_frame, ros::Time::now(), m.child_frame_id);
-	}
 }
 
 void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
@@ -140,7 +132,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 		// Average the position for each landmark
 		for (int i = 1; i < mcpdf->NumSamplesGet(); i++) {
 			int j = 0;
-			state =	mcpdf->SampleGet(i).ValueGet();
+			state = mcpdf->SampleGet(i).ValueGet();
 
 			for (stateIter = state.begin(); stateIter != state.end();
 					stateIter++) {
@@ -159,10 +151,9 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 		}
 
 		// Publish the transform for each landmark
-		state =	mcpdf->SampleGet(0).ValueGet();
-
+		state = mcpdf->SampleGet(0).ValueGet();
+		int j = 0;
 		for (stateIter = state.begin(); stateIter != state.end(); stateIter++) {
-			int j = 0;
 			if (stateIter->child_frame_id.compare(robotFrame) != 0) {
 				char marker_frame[15];
 				sprintf(&marker_frame[0], "slam%s",
@@ -173,6 +164,18 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 				j++;
 			}
 		}
+
+		// Publish Marker
+		state = mcpdf->SampleGet(0).ValueGet();
+		for (stateIter = state.begin(); stateIter != state.end(); stateIter++) {
+			if (stateIter->child_frame_id.compare(robotFrame) != 0) {
+				char marker_frame[15];
+				sprintf(&marker_frame[0], "slam%s", stateIter->child_frame_id.c_str());
+				publishVisualMarker("map", ros::Time::now(), marker_frame);
+			}
+		}
+
+
 	}
 }
 
@@ -195,19 +198,19 @@ void FSLAMFilter::publishVisualMarker(string frame_id, Time stamp, string mId) {
 	rvizMarker_.action = visualization_msgs::Marker::ADD;
 	rvizMarker_.frame_locked = true;
 
-	if (mId.compare("/M1") == 0) {
+	if (mId.compare("slam/M1") == 0) {
 		rvizMarker_.color.r = 0.0f;
 		rvizMarker_.color.g = 0.0f;
 		rvizMarker_.color.b = 1.0f;
-	} else if (mId.compare("/M2") == 0) {
+	} else if (mId.compare("slam/M2") == 0) {
 		rvizMarker_.color.r = 1.0f;
 		rvizMarker_.color.g = 0.0f;
 		rvizMarker_.color.b = 0.0f;
-	} else if (mId.compare("/M3") == 0) {
+	} else if (mId.compare("slam/M3") == 0) {
 		rvizMarker_.color.r = 1.0f;
 		rvizMarker_.color.g = 0.0f;
 		rvizMarker_.color.b = 1.0f;
-	} else if (mId.compare("/M4") == 0) {
+	} else if (mId.compare("slam/M4") == 0) {
 		rvizMarker_.color.r = 1.0f;
 		rvizMarker_.color.g = 1.0f;
 		rvizMarker_.color.b = 0.0f;
