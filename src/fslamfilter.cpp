@@ -66,14 +66,13 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 			mcpdf->SampleGet(i).ValueSet(state);
 			lmAdded = true;
 		}
-
 		// TODO: Kalman filter
 	}
 
 	// If an LM was added, publish its marker once, using lock_frame to then correspond it to the tf published
 	if (lmAdded) {
 		char marker_frame[15];
-		sprintf(&marker_frame[0], "slam/%s", m.child_frame_id.c_str());
+		sprintf(&marker_frame[0], "slam%s", m.child_frame_id.c_str());
 		publishVisualMarker(marker_frame, m.header.stamp, m.child_frame_id);
 	}
 }
@@ -162,7 +161,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 			int j = 0;
 			if (stateIter->child_frame_id.compare(robotFrame) != 0) {
 				char marker_frame[15];
-				sprintf(&marker_frame[0], "slam/%s",
+				sprintf(&marker_frame[0], "slam%s",
 						stateIter->child_frame_id.c_str());
 				br.sendTransform(
 						tf::StampedTransform(landmarks.at(j), ros::Time::now(),
