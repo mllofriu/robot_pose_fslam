@@ -162,28 +162,24 @@ void FSLAMFilter::publishVisualMarker(tf::StampedTransform pose,
 		rvizMarker_.color.r = 0.0f;
 		rvizMarker_.color.g = 0.0f;
 		rvizMarker_.color.b = 1.0f;
-		rvizMarker_.color.a = 1.0;
 	} else if (mId.compare("/M2") == 0) {
 		rvizMarker_.color.r = 1.0f;
 		rvizMarker_.color.g = 0.0f;
 		rvizMarker_.color.b = 0.0f;
-		rvizMarker_.color.a = 1.0;
 	} else if (mId.compare("/M3") == 0) {
 		rvizMarker_.color.r = 1.0f;
 		rvizMarker_.color.g = 0.0f;
 		rvizMarker_.color.b = 1.0f;
-		rvizMarker_.color.a = 1.0;
 	} else if (mId.compare("/M4") == 0) {
 		rvizMarker_.color.r = 1.0f;
 		rvizMarker_.color.g = 1.0f;
 		rvizMarker_.color.b = 0.0f;
-		rvizMarker_.color.a = 1.0;
 	} else {
 		rvizMarker_.color.r = 0.0f;
 		rvizMarker_.color.g = 1.0f;
 		rvizMarker_.color.b = 0.0f;
-		rvizMarker_.color.a = 1.0;
 	}
+	rvizMarker_.color.a = .5;
 	rvizMarker_.lifetime = ros::Duration(30);
 
 	rvizMarkerPub_.publish(rvizMarker_);
