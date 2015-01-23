@@ -32,7 +32,7 @@
 
 #define PUBLISH_LMS_TIME 30
 
-#define FILTER_RATE 1 
+#define FILTER_RATE 2 
 
 class FSLAMNode {
 public:
