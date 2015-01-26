@@ -25,6 +25,7 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <robot_pose_fslam/TransformWithCovarianceStamped.h>
+#include <semaphore.h>
 
 using namespace robot_pose_fslam;
 using namespace MatrixWrapper;
@@ -133,7 +134,11 @@ void FSLAMNode::doSLAM() {
 			vector<TransformWithCovarianceStamped> >(NUM_SAMPLES, 1);
 	prior_discr->ListOfSamplesSet(prior_samples);
 
-	filter = new FSLAMFilter(prior_discr, 0, NUM_SAMPLES / 4.0);
+	sem_t mtx;
+	sem_init(&mtx, 0, 1);
+	filter = new FSLAMFilter(prior_discr, 0, NUM_SAMPLES / 4.0, mtx);
+
+	ros::ServiceServer service = n.advertiseService("reset_position", &FSLAMFilter::resetPosition, filter);
 
 	ros::Rate r(FILTER_RATE);
 	ros::Time lastUpdate = ros::Time::now();
@@ -165,8 +170,10 @@ void FSLAMNode::doSLAM() {
 		vector<TransformWithCovarianceStamped> input;
 		input.push_back(odomT);
 
+		sem_wait(&mtx);
 		filter->Update(&sys_model, input);
-
+		sem_post(&mtx);  
+		
 		// Get landmark
 		ar_pose::ARMarkersConstPtr lm = cache.getElemBeforeTime(now);
 
@@ -192,7 +199,9 @@ void FSLAMNode::doSLAM() {
 				tlm.child_frame_id = child_frame;
 				tlm.header.frame_id = robotFrame;
 				transformTFToMsg(robotToMarker, tlm.transform.transform);
+				sem_wait(&mtx);
 				filter->Update(&meas_model, tlm);
+				sem_post(&mtx); 
 				filter->mapping(tlm);
 			} catch (TransformException tfe) {
 				ROS_ERROR("%s", tfe.what());
@@ -213,7 +222,7 @@ void FSLAMNode::doSLAM() {
 }
 
 FSLAMNode::~FSLAMNode() {
-	// TODO Auto-generated destructor stub
+
 }
 
 int main(int argc, char** argv) {
@@ -221,6 +230,6 @@ int main(int argc, char** argv) {
 	NodeHandle nh("~");
 	FSLAMNode filter(nh);
 
-	ros::spin();
+	//ros::spin();
 }
 
