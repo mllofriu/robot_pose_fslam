@@ -143,8 +143,8 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 					t.setOrigin(t.getOrigin() / mcpdf->NumSamplesGet());
 					landmarks.at(j).setOrigin(
 							landmarks.at(j).getOrigin() + t.getOrigin());
-					landmarks.at(j).setRotation(
-							landmarks.at(j).getRotation() * t.getRotation());
+					//landmarks.at(j).setRotation(
+						//	landmarks.at(j).getRotation() * t.getRotation());
 					j++;
 				}
 			}
