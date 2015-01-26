@@ -11,16 +11,42 @@ using namespace tf;
 using namespace ros;
 
 FSLAMFilter::FSLAMFilter(MCPdf<vector<TransformWithCovarianceStamped> > * prior,
-		int resample_period, double resample_thrs) :
+		int resample_period, double resample_thrs, sem_t & mtx) :
 		BootstrapFilter<vector<TransformWithCovarianceStamped>,
 				TransformWithCovarianceStamped>(prior, resample_period,
 				resample_thrs) {
 
 	rvizMarkerPub_ = NodeHandle().advertise<visualization_msgs::Marker>(
 			"visualization_marker", 0);
+	this->mtx = &mtx;
+}
+
+bool FSLAMFilter::resetPosition(robot_pose_fslam::ResetPosition::Request& request, robot_pose_fslam::ResetPosition::Response& response){
+	sem_wait(mtx);
+	// Iterate over every particle
+	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
+	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
+		vector<TransformWithCovarianceStamped> state =
+				mcpdf->SampleGet(i).ValueGet();
+
+		// Find the particles transform for the robot
+		vector<TransformWithCovarianceStamped>::iterator stateIter;
+		for (stateIter = state.begin();
+				stateIter != state.end()
+						&& stateIter->child_frame_id.compare(
+								"robot") != 0; stateIter++)
+			;
+		// Update it with the sent transform
+		stateIter->transform.transform = request.pose;
+		stateIter->header.stamp = request.header.stamp;
+	}
+	sem_post(mtx);
+
+	return true;
 }
 
 void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
+	sem_wait(mtx);
 	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
 
 	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
@@ -66,13 +92,13 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 		}
 		// TODO: Kalman filter
 	}
-
+	sem_post(mtx);
 }
 
 void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 		std::string & robotFrame, bool publishLandmarks) {
 	tf::Transform robotT;
-
+	sem_wait(mtx);
 	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
 	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
 		vector<TransformWithCovarianceStamped> state =
@@ -177,6 +203,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 
 
 	}
+	sem_post(mtx);
 }
 
 void FSLAMFilter::publishVisualMarker(string frame_id, Time stamp, string mId) {
