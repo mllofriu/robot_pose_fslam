@@ -97,9 +97,12 @@ void FSLAMFilter::mapping(const TransformWithCovarianceStamped & m) {
 
 void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 		std::string & robotFrame, bool publishLandmarks) {
-	tf::Transform robotT;
+
 	sem_wait(mtx);
 	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
+
+	tf::Quaternion avgRot(tf::Vector3(0,0,1), 0);
+	tf::Vector3 avgTrans;
 	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
 		vector<TransformWithCovarianceStamped> state =
 				mcpdf->SampleGet(i).ValueGet();
@@ -128,12 +131,19 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 //		br.sendTransform(st);
 
 // Acumulate transform for the robot pos
-		t.setOrigin(t.getOrigin() / mcpdf->NumSamplesGet());
-		robotT.setOrigin(robotT.getOrigin() + t.getOrigin());
-		robotT.setRotation(robotT.getRotation() + t.getRotation());
+		avgTrans += t.getOrigin();
+//		robotT.setOrigin(robotT.getOrigin() + t.getOrigin());
+		//robotT.setRotation(robotT.getRotation() + t.getRotation());
+		if (avgRot.dot(t.getRotation()) < 0)
+			avgRot = avgRot.inverse();
+		avgRot += t.getRotation();
 		//robotT.mult(robotT, t);
 	}
 
+	avgRot = avgRot / mcpdf->NumSamplesGet();
+	avgRot.normalize();
+	avgTrans = avgTrans / mcpdf->NumSamplesGet();
+	tf::Transform robotT(avgRot, avgTrans);
 	br.sendTransform(
 			tf::StampedTransform(robotT, ros::Time::now(), "map", robotFrame));
 	ROS_DEBUG("TF particles published");
