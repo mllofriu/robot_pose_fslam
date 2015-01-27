@@ -12,6 +12,11 @@
 #include <ros/ros.h>
 #include <boost/thread.hpp>
 
+#define INITIAL_X 0
+#define INITIAL_Y 0
+#define INITIAL_Z 0
+#define INITIAL_THETA 1.57
+
 #define MU_SYSTEM_NOISE_X 0.0
 #define MU_SYSTEM_NOISE_Y 0.0
 #define MU_SYSTEM_NOISE_THETA 0.0
