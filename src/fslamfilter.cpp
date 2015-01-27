@@ -21,7 +21,9 @@ FSLAMFilter::FSLAMFilter(MCPdf<vector<TransformWithCovarianceStamped> > * prior,
 	this->mtx = &mtx;
 }
 
-bool FSLAMFilter::resetPosition(robot_pose_fslam::ResetPosition::Request& request, robot_pose_fslam::ResetPosition::Response& response){
+bool FSLAMFilter::resetPosition(
+		robot_pose_fslam::ResetPosition::Request& request,
+		robot_pose_fslam::ResetPosition::Response& response) {
 	sem_wait(mtx);
 	// Iterate over every particle
 	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
@@ -33,13 +35,13 @@ bool FSLAMFilter::resetPosition(robot_pose_fslam::ResetPosition::Request& reques
 		vector<TransformWithCovarianceStamped>::iterator stateIter;
 		for (stateIter = state.begin();
 				stateIter != state.end()
-						&& stateIter->child_frame_id.compare(
-								"robot") != 0; stateIter++)
+						&& stateIter->child_frame_id.compare("robot") != 0;
+				stateIter++)
 			;
 		// Update it with the sent transform
 		stateIter->transform.transform = request.pose;
 		stateIter->header.stamp = request.header.stamp;
-		
+
 		mcpdf->SampleGet(i).ValueSet(state);
 	}
 	sem_post(mtx);
@@ -105,7 +107,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 	sem_wait(mtx);
 	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
 
-	tf::Quaternion avgRot(tf::Vector3(0,0,1), 0);
+	tf::Quaternion avgRot(tf::Vector3(0, 0, 1), 0);
 	tf::Vector3 avgTrans;
 	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
 		vector<TransformWithCovarianceStamped> state =
@@ -146,6 +148,29 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 
 	avgRot = avgRot / mcpdf->NumSamplesGet();
 	avgRot.normalize();
+
+	// find out if sign is the proper one
+	tf::Quaternion avgRotInv = avgRot.inverse();
+	double dotToAvg = 0, dotToAvgInv = 0;
+	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
+		vector<TransformWithCovarianceStamped> state =
+				mcpdf->SampleGet(i).ValueGet();
+
+		vector<TransformWithCovarianceStamped>::iterator stateIter;
+		for (stateIter = state.begin();
+				stateIter != state.end()
+						&& stateIter->child_frame_id.compare(robotFrame) != 0;
+				stateIter++)
+			;
+
+		tf::Transform t;
+		transformMsgToTF(stateIter->transform.transform, t);
+		dotToAvg += t.getRotation().dot(avgRot);
+		dotToAvgInv += t.getRotation().dot(avgRotInv);
+	}
+	if (dotToAvgInv > dotToAvg)
+		avgRot = avgRotInv;
+
 	avgTrans = avgTrans / mcpdf->NumSamplesGet();
 	tf::Transform robotT(avgRot, avgTrans);
 	br.sendTransform(
@@ -184,7 +209,7 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 					landmarks.at(j).setOrigin(
 							landmarks.at(j).getOrigin() + t.getOrigin());
 					//landmarks.at(j).setRotation(
-						//	landmarks.at(j).getRotation() * t.getRotation());
+					//	landmarks.at(j).getRotation() * t.getRotation());
 					j++;
 				}
 			}
@@ -210,11 +235,12 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 		for (stateIter = state.begin(); stateIter != state.end(); stateIter++) {
 			if (stateIter->child_frame_id.compare(robotFrame) != 0) {
 				char marker_frame[15];
-				sprintf(&marker_frame[0], "slam%s", stateIter->child_frame_id.c_str());
-				publishVisualMarker(marker_frame, ros::Time::now(), marker_frame);
+				sprintf(&marker_frame[0], "slam%s",
+						stateIter->child_frame_id.c_str());
+				publishVisualMarker(marker_frame, ros::Time::now(),
+						marker_frame);
 			}
 		}
-
 
 	}
 	sem_post(mtx);
