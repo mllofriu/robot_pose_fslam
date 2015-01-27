@@ -39,8 +39,12 @@ bool FSLAMFilter::resetPosition(robot_pose_fslam::ResetPosition::Request& reques
 		// Update it with the sent transform
 		stateIter->transform.transform = request.pose;
 		stateIter->header.stamp = request.header.stamp;
+		
+		mcpdf->SampleGet(i).ValueSet(state);
 	}
 	sem_post(mtx);
+
+	ROS_INFO("Position has been reseted");
 
 	return true;
 }

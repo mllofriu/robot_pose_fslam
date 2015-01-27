@@ -12,12 +12,17 @@
 #include <ros/ros.h>
 #include <boost/thread.hpp>
 
+#define INITIAL_X 0
+#define INITIAL_Y 0
+#define INITIAL_Z 0
+#define INITIAL_THETA 1.57
+
 #define MU_SYSTEM_NOISE_X 0.0
 #define MU_SYSTEM_NOISE_Y 0.0
 #define MU_SYSTEM_NOISE_THETA 0.0
-#define SIGMA_SYSTEM_NOISE_X 0.2
-#define SIGMA_SYSTEM_NOISE_Y 0.2
-#define SIGMA_SYSTEM_NOISE_THETA 0.04
+#define SIGMA_SYSTEM_NOISE_X 0.3
+#define SIGMA_SYSTEM_NOISE_Y 0.3
+#define SIGMA_SYSTEM_NOISE_THETA 0.08
 
 #define MU_MEAS_NOISE_X 0.0
 #define MU_MEAS_NOISE_Y 0.0

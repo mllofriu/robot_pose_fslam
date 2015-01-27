@@ -116,7 +116,7 @@ void FSLAMNode::doSLAM() {
 	// Discrete prior for Particle filter (using the continuous Gaussian prior)
 	vector<Sample<vector<TransformWithCovarianceStamped> > > prior_samples(
 			NUM_SAMPLES);
-	Transform initial_t(tf::Quaternion(tf::Vector3(0, 0, 1), 0));
+	Transform initial_t(tf::Quaternion(tf::Vector3(0, 0, 1), INITIAL_THETA), tf::Vector3(INITIAL_X, INITIAL_Y, INITIAL_Z));
 	ros::Time tTime = ros::Time::now();
 
 //	initial_t.setRotation(initial_t.getRotation() * tf::Quaternion(tf::Vector3(0,1,0), -M_PI_2));
@@ -182,7 +182,8 @@ void FSLAMNode::doSLAM() {
 				&& lm->markers[0].pose.pose.position.z > 0
 				&& lm->markers[0].confidence > 80
 				&& lm->markers[0].header.stamp > lastUpdate
-				&& t.getOrigin().length() < 0.05 && t.getRotation().getAngle() < M_PI / 20) {
+				//&& t.getOrigin().length() < 0.05 && t.getRotation().getAngle() < M_PI / 20
+			) {
 			ROS_DEBUG("Received lm at %d", lm->markers[0].header.stamp.sec);
 			// Look for transform between robotFrame and marker
 			StampedTransform robotToMarker;
