@@ -108,8 +108,20 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
 
 	tf::Quaternion avgRot(tf::Vector3(0, 0, 1), 0);
-	tf::Vector3 avgTrans;
-	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
+
+	vector<TransformWithCovarianceStamped> state =
+			mcpdf->SampleGet(0).ValueGet();
+
+	vector<TransformWithCovarianceStamped>::iterator stateIter;
+	for (stateIter = state.begin();
+			stateIter != state.end()
+					&& stateIter->child_frame_id.compare(robotFrame) != 0;
+			stateIter++)
+		;
+	tf::Transform t;
+	transformMsgToTF(stateIter->transform.transform, t);
+	tf::Vector3 avgTrans = t.getOrigin() / mcpdf->NumSamplesGet();
+	for (int i = 1; i < mcpdf->NumSamplesGet(); i++) {
 		vector<TransformWithCovarianceStamped> state =
 				mcpdf->SampleGet(i).ValueGet();
 
@@ -137,41 +149,16 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 //		br.sendTransform(st);
 
 // Acumulate transform for the robot pos
-		avgTrans += t.getOrigin();
+		avgTrans += t.getOrigin() / mcpdf->NumSamplesGet();
 //		robotT.setOrigin(robotT.getOrigin() + t.getOrigin());
 		//robotT.setRotation(robotT.getRotation() + t.getRotation());
-		if (avgRot.dot(t.getRotation()) < 0)
-			avgRot = avgRot.inverse();
-		avgRot += t.getRotation();
+//		if (avgRot.dot(t.getRotation()) < 0)
+//			avgRot = avgRot.inverse();
+		avgRot += t.getRotation() / mcpdf->NumSamplesGet();
 		//robotT.mult(robotT, t);
 	}
 
-	avgRot = avgRot / mcpdf->NumSamplesGet();
-	avgRot.normalize();
-
-	// find out if sign is the proper one
-	tf::Quaternion avgRotInv = avgRot.inverse();
-	double dotToAvg = 0, dotToAvgInv = 0;
-	for (int i = 0; i < mcpdf->NumSamplesGet(); i++) {
-		vector<TransformWithCovarianceStamped> state =
-				mcpdf->SampleGet(i).ValueGet();
-
-		vector<TransformWithCovarianceStamped>::iterator stateIter;
-		for (stateIter = state.begin();
-				stateIter != state.end()
-						&& stateIter->child_frame_id.compare(robotFrame) != 0;
-				stateIter++)
-			;
-
-		tf::Transform t;
-		transformMsgToTF(stateIter->transform.transform, t);
-		dotToAvg += t.getRotation().dot(avgRot);
-		dotToAvgInv += t.getRotation().dot(avgRotInv);
-	}
-	if (dotToAvgInv > dotToAvg)
-		avgRot = avgRotInv;
-
-	avgTrans = avgTrans / mcpdf->NumSamplesGet();
+//	avgTrans = avgTrans / mcpdf->NumSamplesGet();
 	tf::Transform robotT(avgRot, avgTrans);
 	br.sendTransform(
 			tf::StampedTransform(robotT, ros::Time::now(), "map", robotFrame));
