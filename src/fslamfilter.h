@@ -28,8 +28,11 @@ public:
 			const robot_pose_fslam::TransformWithCovarianceStamped & measurement);
 	void publishTF(tf::TransformBroadcaster &, std::string &,
 			bool publishLandmarks);
-	bool resetPosition(robot_pose_fslam::ResetPosition::Request& request, robot_pose_fslam::ResetPosition::Response& response);
-
+	bool resetPosition(robot_pose_fslam::ResetPosition::Request& request,
+			robot_pose_fslam::ResetPosition::Response& response);
+	robot_pose_fslam::TransformWithCovarianceStamped * getTransform(
+			std::vector<robot_pose_fslam::TransformWithCovarianceStamped> & states,
+			std::string & frame);
 private:
 
 	void publishVisualMarker(std::string frame_id, ros::Time stamp,

@@ -105,61 +105,22 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 		std::string & robotFrame, bool publishLandmarks) {
 
 	sem_wait(mtx);
+	// Pick the most weighted particle to avoid problems with rotation averaging
 	MCPdf<vector<TransformWithCovarianceStamped> > * mcpdf = PostGet();
-
-	tf::Quaternion avgRot(tf::Vector3(0, 0, 1), 0);
-
-	vector<TransformWithCovarianceStamped> state =
-			mcpdf->SampleGet(0).ValueGet();
-
-	vector<TransformWithCovarianceStamped>::iterator stateIter;
-	for (stateIter = state.begin();
-			stateIter != state.end()
-					&& stateIter->child_frame_id.compare(robotFrame) != 0;
-			stateIter++)
-		;
-	tf::Transform t;
-	transformMsgToTF(stateIter->transform.transform, t);
-	tf::Vector3 avgTrans = t.getOrigin() / mcpdf->NumSamplesGet();
-	for (int i = 1; i < mcpdf->NumSamplesGet(); i++) {
-		vector<TransformWithCovarianceStamped> state =
-				mcpdf->SampleGet(i).ValueGet();
-
-		vector<TransformWithCovarianceStamped>::iterator stateIter;
-		for (stateIter = state.begin();
-				stateIter != state.end()
-						&& stateIter->child_frame_id.compare(robotFrame) != 0;
-				stateIter++)
-			;
-
-		// If robot transform cannot be found, skip the measurement
-		if (stateIter == state.end()) {
-			ROS_WARN("No robot transform in state");
+	vector<WeightedSample<vector<TransformWithCovarianceStamped> > > wSamples =
+			mcpdf->ListOfSamplesGet();
+	double maxWeight = -INFINITY;
+	int index = 0;
+	for (int i = 0; i < wSamples.size(); i++)
+		if (wSamples.at(i).WeightGet() > maxWeight) {
+			index = i;
+			maxWeight = wSamples.at(i).WeightGet();
 		}
 
-		tf::Transform t;
-		transformMsgToTF(stateIter->transform.transform, t);
-
-//		ROS_INFO("Particle x %f", t.getOrigin().getX());
-//		char child_frame[10];
-//		ros::Time partTime = stateIter->header.stamp;
-//		sprintf(&child_frame[0], "part%d", i);
-//		tf::StampedTransform st(t, partTime, stateIter->header.frame_id,
-//				child_frame);
-//		br.sendTransform(st);
-
-// Acumulate transform for the robot pos
-		avgTrans += t.getOrigin() / mcpdf->NumSamplesGet();
-//		robotT.setOrigin(robotT.getOrigin() + t.getOrigin());
-		//robotT.setRotation(robotT.getRotation() + t.getRotation());
-//		if (avgRot.dot(t.getRotation()) < 0)
-//			avgRot = avgRot.inverse();
-		avgRot += t.getRotation() / mcpdf->NumSamplesGet();
-		//robotT.mult(robotT, t);
-	}
-
-//	avgTrans = avgTrans / mcpdf->NumSamplesGet();
-	tf::Transform robotT(avgRot, avgTrans);
+	tf::Transform robotT;
+	TransformWithCovarianceStamped * mostWeighted = getTransform(
+			wSamples.at(index).ValueGet(), robotFrame);
+	transformMsgToTF(mostWeighted->transform.transform, robotT);
 	br.sendTransform(
 			tf::StampedTransform(robotT, ros::Time::now(), "map", robotFrame));
 	ROS_DEBUG("TF particles published");
@@ -231,6 +192,17 @@ void FSLAMFilter::publishTF(tf::TransformBroadcaster & br,
 
 	}
 	sem_post(mtx);
+}
+
+TransformWithCovarianceStamped * getTransform(
+		vector<TransformWithCovarianceStamped> & state, string & frame) {
+	vector<TransformWithCovarianceStamped>::iterator stateIter;
+	for (stateIter = state.begin();
+			stateIter != state.end()
+					&& stateIter->child_frame_id.compare(frame) != 0;
+			stateIter++)
+		;
+	return &(*stateIter);
 }
 
 void FSLAMFilter::publishVisualMarker(string frame_id, Time stamp, string mId) {
